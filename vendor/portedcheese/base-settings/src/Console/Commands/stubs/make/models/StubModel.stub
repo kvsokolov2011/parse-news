@@ -1,0 +1,10 @@
+<?php
+
+namespace {{namespace}};
+
+use {{vndName}}\{{pkgName}}\Models\{{model}} as VendorModel;
+
+class {{model}} extends VendorModel
+{
+
+}

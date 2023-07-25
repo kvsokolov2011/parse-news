@@ -1,0 +1,10 @@
+<?php
+
+namespace {{namespace}}Observers\Vendor\{{pkgName}};
+
+use {{vndName}}\{{pkgName}}\Observers\{{observer}} as VendorObserver;
+
+class {{observer}} extends VendorObserver
+{
+
+}

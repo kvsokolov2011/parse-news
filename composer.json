@@ -1,0 +1,38 @@
+{
+    "name": "cher4geo35/parse-news",
+    "description": "Parsing of 4geo news pages",
+    "type": "library",
+    "license": "MIT",
+    "version": "0.1.0",
+    "authors": [
+        {
+            "name": "K.Sokolov",
+            "email": "kvsokolov2011@mail.ru"
+        }
+    ],
+    "minimum-stability": "stable",
+    "autoload": {
+        "psr-4": {
+            "Cher4geo35\\ParseNews\\": "src/"
+        }
+    },
+    "require": {
+        "php": "^8.0.2",
+        "laravel/framework": "^9.0",
+        "portedcheese/base-settings": "^4.0",
+        "guzzlehttp/guzzle": "^7.7"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^7.0"
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Cher4geo35\\ParseNews\\ParseNewsServiceProvider"
+            ],
+            "aliases": {
+                "ParseNews": "Cher4geo35\\ParseNews\\Facade"
+            }
+        }
+    }
+}

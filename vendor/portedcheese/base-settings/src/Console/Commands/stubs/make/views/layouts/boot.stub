@@ -1,0 +1,6 @@
+@isset($customTheme)
+    @includeIf('layouts.' . $customTheme)
+@endisset
+@empty($customTheme)
+    @includeIf('layouts.' . $theme)
+@endempty

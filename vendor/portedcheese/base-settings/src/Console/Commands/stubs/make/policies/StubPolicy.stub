@@ -1,0 +1,10 @@
+<?php
+
+namespace {{namespace}}\Policies;
+
+use {{vndName}}\{{pkgName}}\Policies\{{policy}} as VendorPolicy;
+
+class {{policy}} extends VendorPolicy
+{
+
+}
