@@ -43,8 +43,9 @@ class ParseNewsController extends BaseController
         for($i=1; $i <= $this->data->last_page_number; $i++){
             $dataPage = clone $this->data;
             $dataPage->uri_paginator = $dataPage->uri_paginator.$i;
-            ParseListPages::dispatch($dataPage)->onQueue('list');//Парсим одну страницу всего списка новостей и помещаем в БД
+            ParseListPages::dispatch($dataPage)->onQueue('list');//Парсим одну страницу всего списка новостей
         }
+
         return view("parse-news::admin.parse-news.index",['content' => "Запрос на парсинг выполнен"]);
     }
 
@@ -102,6 +103,9 @@ class ParseNewsController extends BaseController
             "path_description" => $path_description,
             "path_date" => $path_date,
             "path_gallery" => $path_gallery,
+            "path_meta_title" => trim($request->path_meta_title),
+            "path_meta_description" => trim($request->path_meta_description),
+            "path_meta_keywords" => trim($request->path_meta_keywords),
         ];
         return false;
     }

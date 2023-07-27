@@ -53,6 +53,11 @@ class ParseSinglePage implements ShouldQueue
 
         $eval_gallery_news = $xpath->evaluate($data->path_gallery);
 
+        //meta
+        $eval_meta_title_news = $xpath->evaluate($data->path_meta_title);
+        $eval_meta_description_news = $xpath->evaluate($data->path_meta_description);
+        $eval_meta_keywords_news = $xpath->evaluate($data->path_meta_keywords);
+
         $link_images_gallery = [];
         if($eval_gallery_news->length != 0){
             foreach($eval_gallery_news as $link_image_gallery){
@@ -68,6 +73,9 @@ class ParseSinglePage implements ShouldQueue
             "description" => $this->getDescription($doc, $xpath, $data->path_description),
             "date" => $this->getDate($xpath, $data->path_date),
             "slug" => $this->slug,
+            "meta_title_news" => $this->getMetaContent($eval_meta_title_news),
+            "meta_description_news" => $this->getMetaContent($eval_meta_description_news),
+            "meta_keywords_news" => $this->getMetaContent($eval_meta_keywords_news),
         ];
         ParseSinglePageToDB::dispatch($pagedb)->onQueue('singledb');//Запись title, short, slug в БД
 

@@ -2,6 +2,7 @@
 
 namespace Cher4geo35\ParseNews\Jobs\Admin;
 
+use App\Meta;
 use Cher4geo35\ParseNews\Traits\ParseImage;
 use DOMDocument;
 use DOMXPath;
@@ -53,6 +54,11 @@ class ParseListPages implements ShouldQueue
         $eval_link_page_news = $xpath->evaluate($data->path_link);
         $eval_short_news = $xpath->evaluate($data->path_short);
 
+        //meta
+        $eval_meta_title_news = $xpath->evaluate($data->path_meta_title);
+        $eval_meta_description_news = $xpath->evaluate($data->path_meta_description);
+        $eval_meta_keywords_news = $xpath->evaluate($data->path_meta_keywords);
+
         if($data->source_image == 'list'){
             $eval_image_news = $xpath->evaluate($data->path_image_list);
         }
@@ -80,6 +86,9 @@ class ParseListPages implements ShouldQueue
                                     "slug" => $slug,
                                     "title" => $title,
                                     "short" => $short,
+                                    "meta_title_news" => $this->getMetaContent($eval_meta_title_news),
+                                    "meta_description_news" => $this->getMetaContent($eval_meta_description_news),
+                                    "meta_keywords_news" => $this->getMetaContent($eval_meta_keywords_news),
                                 ];
                 ParseListPagesToDB::dispatch($listdb)->onQueue('listdb');//Запись title, short, slug в БД
 
@@ -90,6 +99,7 @@ class ParseListPages implements ShouldQueue
                 ];
                 ParseSinglePage::dispatch($single)->onQueue('single');//Парсинг страницы новости
             }
+
         } else {
             $news = "Ссылки на страницы новостей не найдены, slug не определен!";
         }

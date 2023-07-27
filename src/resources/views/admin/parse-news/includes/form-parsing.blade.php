@@ -19,4 +19,7 @@
 
     <h2 class="mt-5 mb-3 h4">Парсинг страницы новости 4geo</h2>
     @include("parse-news::admin.parse-news.includes.input-parse-page")
+
+    <h2 class="mt-5 mb-3 h4">Парсинг meta 4geo</h2>
+    @include("parse-news::admin.parse-news.includes.inputs_meta")
 </form>

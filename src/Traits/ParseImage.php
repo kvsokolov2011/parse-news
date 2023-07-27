@@ -3,7 +3,9 @@
 namespace Cher4geo35\ParseNews\Traits;
 
 use App\Image;
+use App\Meta;
 use App\News;
+use Exception;
 use Illuminate\Http\Request;
 
 trait ParseImage
@@ -84,6 +86,12 @@ trait ParseImage
         }
         $this->clearDir(public_path('storage/gallery/news'));
         $this->clearDir(public_path('storage/news/main'));
+        $meta = Meta::query()
+            ->where('page', 'news')
+            ->where('metable_type', 'App/news')->get();
+        foreach ($meta as $item){
+            $meta->delete();
+        }
     }
 
     public function clearDir($dir){
@@ -94,4 +102,11 @@ trait ParseImage
         }
     }
 
+    public function getMetaContent($eval){
+        if( $eval->length !=0){
+            foreach($eval as $item){
+                return trim($item->textContent . PHP_EOL);
+            }
+        }
+    }
 }

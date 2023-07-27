@@ -2,7 +2,9 @@
 
 namespace Cher4geo35\ParseNews\Jobs\Admin;
 
+use App\Meta;
 use App\News;
+use Cher4geo35\ParseNews\Traits\ParseImage;
 use Exception;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -13,6 +15,7 @@ use Illuminate\Queue\SerializesModels;
 class ParseListPagesToDB implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+    use ParseImage;
 
     protected $listdb;
     /**
@@ -45,6 +48,32 @@ class ParseListPagesToDB implements ShouldQueue
             $news->slug = $this->listdb->slug;
             $news->short = $this->listdb->short;
             $news->save();
+        }
+
+        $this->updateMeta($this->listdb->meta_title_news, 'title');
+        $this->updateMeta($this->listdb->meta_description_news, 'description');
+        $this->updateMeta($this->listdb->meta_keywords_news, 'keywords');
+    }
+
+    private function updateMeta($content, $name){
+        if($content != null){
+            try{
+                $meta = Meta::query()
+                    ->where('name', $name)
+                    ->where('page', 'news')
+                    ->firstOrFail();
+                $meta->update([
+                    'separated' => 0,
+                    'content' => $content,
+                ]);
+
+            } catch (Exception $e) {
+                Meta::create([
+                    'content' => $content,
+                    'page' => 'news',
+                    'name' => $name,
+                ]);
+            }
         }
     }
 }
