@@ -51,13 +51,20 @@ class ParseListPagesToDB implements ShouldQueue
             $news->save();
         }
 
-        $this->updateMeta($this->listdb->meta_title_news, 'title');
-        $this->updateMeta($this->listdb->meta_description_news, 'description');
-        $this->updateMeta($this->listdb->meta_keywords_news, 'keywords');
+        $this->listdb->meta_title_news != 'Не найдено.' ? $this->updateMeta($this->listdb->meta_title_news, 'title') : $this->addError('Мета title не найдено');
+        $this->listdb->meta_description_news != 'Не найдено.' ? $this->updateMeta($this->listdb->meta_description_news, 'description') : $this->addError('Мета description не найдено');
+        $this->listdb->meta_keywords_news != 'Не найдено.' ? $this->updateMeta($this->listdb->meta_keywords_news, 'keywords') : $this->addError('Мета keywords не найдено');
 
         Cache::put('completedJobs', Cache::get('completedJobs', 0)+1 );
     }
 
+    /**
+     * @param $content
+     * @param $name
+     * @return void
+     *
+     * Сохраняем Мета в БД
+     */
     private function updateMeta($content, $name){
         if($content != null){
             try{

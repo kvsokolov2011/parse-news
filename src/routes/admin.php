@@ -18,4 +18,7 @@ Route::group([
     Route::get('/parse-news/get-progress', 'ParseNewsController@getProgress')
         ->name('parse-news.get-progress');
 
+    Route::get('/parse-news/failed-jobs', 'ParseNewsController@failedJobs')
+        ->name('parse-news.failed-jobs');
+
 });

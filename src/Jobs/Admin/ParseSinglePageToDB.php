@@ -55,13 +55,21 @@ class ParseSinglePageToDB implements ShouldQueue
             $news->save();
         }
 
-        $this->updateMeta($this->pagedb->meta_title_news, 'title', $news->id);
-        $this->updateMeta($this->pagedb->meta_description_news, 'description', $news->id);
-        $this->updateMeta($this->pagedb->meta_keywords_news, 'keywords', $news->id);
+        $this->pagedb->meta_title_news != "Не найдено." ? $this->updateMeta($this->pagedb->meta_title_news, 'title', $news->id) : $this->addError('Мета title страницы'.$this->pagedb->slug.'не найдено');
+        $this->pagedb->meta_description_news != "Не найдено." ? $this->updateMeta($this->pagedb->meta_description_news, 'description', $news->id) : $this->addError('Мета description страницы'.$this->pagedb->slug.'не найдено');
+        $this->pagedb->meta_keywords_news != "Не найдено." ? $this->updateMeta($this->pagedb->meta_keywords_news, 'keywords', $news->id) : $this->addError('Мета keywords страницы'.$this->pagedb->slug.'не найдено');
 
         Cache::put('completedJobs', Cache::get('completedJobs', 0)+1 );
     }
 
+    /**
+     * @param $content
+     * @param $name
+     * @param $id
+     * @return \Illuminate\Http\RedirectResponse|void
+     *
+     * Обновляем мета в таблице
+     */
     private function updateMeta($content, $name, $id){
         if($content != null){
             try{

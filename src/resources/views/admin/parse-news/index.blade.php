@@ -1,7 +1,7 @@
 @extends('admin.layout')
 
-@section('page-title', 'Парсинг новостей - ')
-@section('header-title', 'Парсинг новостей')
+@section('page-title', 'Импорт новостей - ')
+@section('header-title', 'Импорт новостей')
 
 @section('admin')
     <div class="col-12">

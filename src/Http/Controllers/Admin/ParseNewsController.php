@@ -2,7 +2,6 @@
 
 namespace Cher4geo35\ParseNews\Http\Controllers\Admin;
 
-
 use App\News;
 use Cher4geo35\ParseNews\Jobs\Admin\ParseListPages;
 use Cher4geo35\ParseNews\Traits\ParseImage;
@@ -18,8 +17,6 @@ class ParseNewsController extends BaseController
     use ParseImage;
 
     const QUEUE = ['list', 'listdb', 'single', 'singledb', 'image_db', 'gallery_db'];
-    public static $summaryJobs;
-    public static $completedJobs;
 
     /**
      * @var
@@ -29,27 +26,45 @@ class ParseNewsController extends BaseController
 
     /**
      * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\View\Factory|\Illuminate\Contracts\View\View
+     *
+     * Страница импорта новостей
      */
     public function index()
     {
-        Cache::put('summaryJobs', 0);
-        Cache::put('completedJobs', 0);
-        Cache::put('resultParseNews', '');
+        $this->clearCache();
         if( $this->queueIsNotEmpty() ){
-            session()->flash('status', 'Процесс импорта новостей.');
+            session()->flash('status', 'Идет процесс импорта новостей.');
             return view("parse-news::admin.parse-news.index");
         }
         return view("parse-news::admin.parse-news.index");
     }
 
     /**
-     * @return float[]|int[]
+     * @return \Illuminate\Http\RedirectResponse
+     *
+     * Очистка проваленных очередей
+     */
+    public function failedJobs()
+    {
+        $this->clearDBFailedJobs();
+        return redirect()
+            ->route("admin.parse-news.index")
+            ->with('success', 'Очереди с ошибками очищены');
+    }
+
+    /**
+     * @return array
+     *
+     * Контроллер для компонента ProgressBar.vue
+     *
      */
     public function getProgress(){
-
         if(Cache::get('summaryJobs', 0) != 0){
             $progress = Cache::get('completedJobs', 0)*100/Cache::get('summaryJobs');
-            if( $this->jobsFailed() )  Cache::put('errorParseNews', 'Ошибка обработчика очередей.');
+            if( $this->jobsFailed() )  {
+                Cache::put('errorParseNews', 'Ошибка обработчика очередей.');
+                $this->clearDBJobs();
+            }
             if($progress >= 100) Cache::put('resultParseNews', 'Импорт новостей прошел успешно');
             return ['width' => $progress,
                     'result' => Cache::get('resultParseNews'),
@@ -61,34 +76,52 @@ class ParseNewsController extends BaseController
         }
     }
 
-
     /**
      * @param Request $request
-     * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\View\Factory|\Illuminate\Contracts\View\View
-     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @return \Illuminate\Http\RedirectResponse
+     *
+     * Парсим страницы новостей
      */
     public function create(Request $request)
     {
-        $check = $this->validateInput($request);
-        if($check) return view("parse-news::admin.parse-news.index",['content' => $check]);
-        $this->clearDBNewsAndFiles();
+        $validator = Validator::make($request->all(), [
+            "link_site" => "required|url|min:2",
+            "uri_news" => "required|min:2",
+            "uri_paginator" => "min:2",
+            "last_page_number" => "integer|numeric|min:1",
+        ]);
+        if( $validator->fails() ) {
+            return  redirect(route('admin.parse-news.index'))->withErrors($validator->errors())->withInput();
+        }
 
-        Cache::put('summaryJobs', 0);
-        Cache::put('completedJobs', 0);
-        Cache::put('resultParseNews', '');
-        Cache::put('errorParseNews', '');
+        $check = $this->validateInput($request);
+        if($check){
+            return redirect()
+                ->route("admin.parse-news.index")
+                ->with('danger', $check);
+        }
+        // Очистка новостей и их картинок и мета
+        $this->clearDBNewsAndFiles();
+        // Очистка переменных progress bar и ошибок
+        $this->clearCache();
 
         //Перебор страниц
         for($i=1; $i <= $this->data->last_page_number; $i++){
             $dataPage = clone $this->data;
             $dataPage->uri_paginator = $dataPage->uri_paginator.$i;
             Cache::put('summaryJobs', Cache::get('summaryJobs') +1);
-            ParseListPages::dispatch($dataPage)->onQueue('list');//Парсим одну страницу всего списка новостей
+            //Парсим одну страницу всего списка новостей
+            ParseListPages::dispatch($dataPage)->onQueue('list');
         }
 
         return redirect(route('admin.parse-news.index'));
     }
 
+    /**
+     * @return bool
+     *
+     * true - есть необработанные очереди
+     */
     private function queueIsNotEmpty(){
         foreach (self::QUEUE as $item) {
             $jobs = DB::table('jobs')
@@ -98,6 +131,11 @@ class ParseNewsController extends BaseController
         return false;
     }
 
+    /**
+     * @return bool
+     *
+     * true - в базе есть проваленные очереди
+     */
     private function jobsFailed(){
         foreach (self::QUEUE as $item) {
             $failed_jobs = DB::table('failed_jobs')
@@ -108,36 +146,16 @@ class ParseNewsController extends BaseController
     }
 
     /**
-     * @param $request
-     * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Http\RedirectResponse|\Illuminate\Routing\Redirector|int
+     * @param Request $request
+     * @return false|string
+     *
+     * Проверка адресов, упаковка исходных данных в массив
      */
-    private function validateInput($request){
-        $validator = Validator::make($request->all(), [
-            "link_site" => "required|url|min:2",
-            "uri_news" => "required|min:2",
-            "uri_paginator" => "min:2",
-            "last_page_number" => "integer|numeric|min:1",
-        ]);
-        if ($validator->fails()) {
-            return redirect(route('admin.parse-news.index'))
-                ->withErrors($validator->errors())
-                ->withInput();
-        }
+    private function validateInput(Request $request){
         $link_site = trim($request->link_site);
         $uri_news = trim($request->uri_news);
         $uri_paginator = trim($request->uri_paginator);
         $last_page_number = trim($request->last_page_number);
-        $source_image = $request->source_image;
-
-        $path_title = trim($request->path_title);
-        $path_link = trim($request->path_link);
-        $path_short = trim($request->path_short);
-        $path_image = trim($request->path_image);
-        $path_image_list = trim($request->path_image_list);
-        $path_description = trim($request->path_description);
-        $path_date = trim($request->path_date);
-        $path_gallery = trim($request->path_gallery);
-
 
         //Проверка валидности адресов
         if(!$this->isValidURL($link_site)) return "Не валидный адрес сайта!";
@@ -148,19 +166,19 @@ class ParseNewsController extends BaseController
         }
 
         $this->data = (object)[
-            "link_site" => $request->link_site,
-            "uri_news" => $request->uri_news,
-            "uri_paginator" => $request->uri_paginator,
+            "link_site" => $link_site,
+            "uri_news" => $uri_news,
+            "uri_paginator" => $uri_paginator,
             "last_page_number" => $last_page_number,
-            "source_image" => $source_image,
-            "path_title" => $path_title,
-            "path_link" => $path_link,
-            "path_short" => $path_short,
-            "path_image" => $path_image,
-            "path_image_list" => $path_image_list,
-            "path_description" => $path_description,
-            "path_date" => $path_date,
-            "path_gallery" => $path_gallery,
+            "source_image" => $request->source_image,
+            "path_title" => trim($request->path_title),
+            "path_link" => trim($request->path_link),
+            "path_short" => trim($request->path_short),
+            "path_image" => trim($request->path_image),
+            "path_image_list" => trim($request->path_image_list),
+            "path_description" => trim($request->path_description),
+            "path_date" => trim($request->path_date),
+            "path_gallery" => trim($request->path_gallery),
             "path_meta_title" => trim($request->path_meta_title),
             "path_meta_description" => trim($request->path_meta_description),
             "path_meta_keywords" => trim($request->path_meta_keywords),
@@ -168,6 +186,12 @@ class ParseNewsController extends BaseController
         return false;
     }
 
+    /**
+     * @param $url
+     * @return bool
+     *
+     * true - URL валидный
+     */
     private function isValidURL($url) {
         $file_headers = @get_headers($url);
         if($file_headers){
