@@ -11,6 +11,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Cache;
 
 class ParseListPagesToDB implements ShouldQueue
 {
@@ -53,6 +54,8 @@ class ParseListPagesToDB implements ShouldQueue
         $this->updateMeta($this->listdb->meta_title_news, 'title');
         $this->updateMeta($this->listdb->meta_description_news, 'description');
         $this->updateMeta($this->listdb->meta_keywords_news, 'keywords');
+
+        Cache::put('completedJobs', Cache::get('completedJobs', 0)+1 );
     }
 
     private function updateMeta($content, $name){

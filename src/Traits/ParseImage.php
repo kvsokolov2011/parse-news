@@ -7,6 +7,7 @@ use App\Meta;
 use App\News;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 trait ParseImage
 {
@@ -92,6 +93,8 @@ trait ParseImage
         foreach ($meta as $item){
             $meta->delete();
         }
+
+        DB::table('failed_jobs')->delete();
     }
 
     public function clearDir($dir){

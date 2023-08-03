@@ -7,12 +7,19 @@ use App\News;
 use Cher4geo35\ParseNews\Jobs\Admin\ParseListPages;
 use Cher4geo35\ParseNews\Traits\ParseImage;
 use Illuminate\Http\Request;
+use Illuminate\Queue\Jobs\Job;
 use Illuminate\Routing\Controller as BaseController;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 class ParseNewsController extends BaseController
 {
     use ParseImage;
+
+    const QUEUE = ['list', 'listdb', 'single', 'singledb', 'image_db', 'gallery_db'];
+    public static $summaryJobs;
+    public static $completedJobs;
 
     /**
      * @var
@@ -25,8 +32,35 @@ class ParseNewsController extends BaseController
      */
     public function index()
     {
+        Cache::put('summaryJobs', 0);
+        Cache::put('completedJobs', 0);
+        Cache::put('resultParseNews', '');
+        if( $this->queueIsNotEmpty() ){
+            session()->flash('status', 'Процесс импорта новостей.');
+            return view("parse-news::admin.parse-news.index");
+        }
         return view("parse-news::admin.parse-news.index");
     }
+
+    /**
+     * @return float[]|int[]
+     */
+    public function getProgress(){
+
+        if(Cache::get('summaryJobs', 0) != 0){
+            $progress = Cache::get('completedJobs', 0)*100/Cache::get('summaryJobs');
+            if( $this->jobsFailed() )  Cache::put('errorParseNews', 'Ошибка обработчика очередей.');
+            if($progress >= 100) Cache::put('resultParseNews', 'Импорт новостей прошел успешно');
+            return ['width' => $progress,
+                    'result' => Cache::get('resultParseNews'),
+                    'error' => Cache::get('errorParseNews')];
+        } else {
+            return ['width' => 0,
+                    'result' => Cache::get('resultParseNews'),
+                    'error' => Cache::get('errorParseNews')];
+        }
+    }
+
 
     /**
      * @param Request $request
@@ -39,14 +73,38 @@ class ParseNewsController extends BaseController
         if($check) return view("parse-news::admin.parse-news.index",['content' => $check]);
         $this->clearDBNewsAndFiles();
 
+        Cache::put('summaryJobs', 0);
+        Cache::put('completedJobs', 0);
+        Cache::put('resultParseNews', '');
+        Cache::put('errorParseNews', '');
+
         //Перебор страниц
         for($i=1; $i <= $this->data->last_page_number; $i++){
             $dataPage = clone $this->data;
             $dataPage->uri_paginator = $dataPage->uri_paginator.$i;
+            Cache::put('summaryJobs', Cache::get('summaryJobs') +1);
             ParseListPages::dispatch($dataPage)->onQueue('list');//Парсим одну страницу всего списка новостей
         }
 
-        return view("parse-news::admin.parse-news.index",['content' => "Запрос на парсинг выполнен"]);
+        return redirect(route('admin.parse-news.index'));
+    }
+
+    private function queueIsNotEmpty(){
+        foreach (self::QUEUE as $item) {
+            $jobs = DB::table('jobs')
+                ->where('queue', $item)->get();
+            if(count($jobs)) return true;
+        }
+        return false;
+    }
+
+    private function jobsFailed(){
+        foreach (self::QUEUE as $item) {
+            $failed_jobs = DB::table('failed_jobs')
+                ->where('queue', $item)->get();
+            if(count($failed_jobs)) return true;
+        }
+        return false;
     }
 
     /**

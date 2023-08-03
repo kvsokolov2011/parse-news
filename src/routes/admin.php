@@ -14,4 +14,8 @@ Route::group([
 
     Route::post('/parse-news/create', 'ParseNewsController@create')
         ->name('parse-news.create');
+
+    Route::get('/parse-news/get-progress', 'ParseNewsController@getProgress')
+        ->name('parse-news.get-progress');
+
 });

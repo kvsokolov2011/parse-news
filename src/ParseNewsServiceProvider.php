@@ -24,7 +24,7 @@ class ParseNewsServiceProvider extends ServiceProvider
         }
 
         $this->publishes([
-            __DIR__ . '/resources/sass' => resource_path('sass/vendor'),
+            __DIR__ . '/resources/js/components' => resource_path('js/components/vendor/parse-news'),
         ], 'public');
     }
 

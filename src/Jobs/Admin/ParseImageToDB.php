@@ -11,6 +11,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Cache;
 use PortedCheese\BaseSettings\Traits\ShouldImage;
 
 class ParseImageToDB implements ShouldQueue
@@ -52,5 +53,6 @@ class ParseImageToDB implements ShouldQueue
             $news->image()->associate($image);
             $news->save();
         }
+        Cache::put('completedJobs', Cache::get('completedJobs', 0)+1 );
     }
 }

@@ -7,10 +7,12 @@
     <h2 class="mt-3 mb-3 h4">URL, URI страницы новостей 4geo</h2>
     @include("parse-news::admin.parse-news.includes.inputs-url-uri")
 
-    <div class="btn-group mt-2"
+    <div class="btn-group mt-2 {{ session()->has('status')?'d-none':'' }}"
          role="group">
         <button type="submit" class="btn btn-success">Выполнить парсинг</button>
     </div>
+
+    <progress-bar url="{{ route('admin.parse-news.get-progress') }}"></progress-bar>
 
     @include("parse-news::admin.parse-news.includes.parsing-result")
 

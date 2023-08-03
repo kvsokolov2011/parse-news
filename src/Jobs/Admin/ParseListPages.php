@@ -3,6 +3,7 @@
 namespace Cher4geo35\ParseNews\Jobs\Admin;
 
 use App\Meta;
+use Cher4geo35\ParseNews\Http\Controllers\Admin\ParseNewsController;
 use Cher4geo35\ParseNews\Traits\ParseImage;
 use DOMDocument;
 use DOMXPath;
@@ -12,6 +13,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Cache;
 
 class ParseListPages implements ShouldQueue
 {
@@ -63,7 +65,6 @@ class ParseListPages implements ShouldQueue
             $eval_image_news = $xpath->evaluate($data->path_image_list);
         }
 
-
         if($eval_link_page_news->length != 0){
             foreach ($eval_link_page_news as $key => $link_page_news) {
                 $link = trim($eval_link_page_news[$key]->textContent.PHP_EOL);
@@ -79,6 +80,7 @@ class ParseListPages implements ShouldQueue
                         "slug" => $slug,
                         "link_image" => $eval_image_news[$key] ? $this->getAndClearLink($eval_image_news[$key]) : "Не найдено.",
                     ];
+                    Cache::put('summaryJobs', Cache::get('summaryJobs') +1);
                     ParseImageToDB::dispatch($image_db)->onQueue('image_db');//Сохранение картинки в БД
                 }
 
@@ -90,6 +92,7 @@ class ParseListPages implements ShouldQueue
                                     "meta_description_news" => $this->getMetaContent($eval_meta_description_news),
                                     "meta_keywords_news" => $this->getMetaContent($eval_meta_keywords_news),
                                 ];
+                Cache::put('summaryJobs', Cache::get('summaryJobs') +1);
                 ParseListPagesToDB::dispatch($listdb)->onQueue('listdb');//Запись title, short, slug в БД
 
                 $single = (object)[
@@ -97,11 +100,12 @@ class ParseListPages implements ShouldQueue
                     "link" => $link,
                     "data" => $data,
                 ];
+                Cache::put('summaryJobs', Cache::get('summaryJobs') +1);
                 ParseSinglePage::dispatch($single)->onQueue('single');//Парсинг страницы новости
             }
-
-        } else {
-            $news = "Ссылки на страницы новостей не найдены, slug не определен!";
         }
+
+        Cache::put('completedJobs', Cache::get('completedJobs', 0)+1 );
     }
+
 }

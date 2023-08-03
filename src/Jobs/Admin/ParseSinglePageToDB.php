@@ -2,6 +2,7 @@
 
 namespace Cher4geo35\ParseNews\Jobs\Admin;
 
+use App\Http\Controllers\Vendor\ParseNews\Admin\ParseNewsController;
 use App\Meta;
 use App\News;
 use Cher4geo35\ParseNews\Traits\ParseImage;
@@ -11,6 +12,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Cache;
 
 class ParseSinglePageToDB implements ShouldQueue
 {
@@ -56,6 +58,8 @@ class ParseSinglePageToDB implements ShouldQueue
         $this->updateMeta($this->pagedb->meta_title_news, 'title', $news->id);
         $this->updateMeta($this->pagedb->meta_description_news, 'description', $news->id);
         $this->updateMeta($this->pagedb->meta_keywords_news, 'keywords', $news->id);
+
+        Cache::put('completedJobs', Cache::get('completedJobs', 0)+1 );
     }
 
     private function updateMeta($content, $name, $id){

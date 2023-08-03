@@ -24,6 +24,7 @@ class ParseNewsMakeCommand extends BaseConfigModelCommand
                     {--config : Make config}
                     {--controllers : Export controllers}
                     {--scss : Export scss files}
+                    {--vue : Export vue files}
                     {--jobs : Export jobs}';
 
     /**
@@ -41,6 +42,14 @@ class ParseNewsMakeCommand extends BaseConfigModelCommand
 
     protected $jobs = [
         "Admin" => ["ParseImageToDB", "ParseListPages", "ParseListPagesToDb", "ParseSinglePge", "ParseSinglePageToDB", "ParseGalleryToDB"]
+    ];
+
+    protected $vueFolder = "parse-news";
+
+    protected $vueIncludes = [
+        'admin' => [
+            'progress-bar' => "ProgressBar",
+        ],
     ];
 
 
@@ -79,6 +88,10 @@ class ParseNewsMakeCommand extends BaseConfigModelCommand
 
         if ($this->option("menu") || $all) {
             $this->makeMenu();
+        }
+
+        if ($this->option("vue") || $all) {
+            $this->makeVueIncludes('admin');
         }
 
 //        if ($this->option("models") || $all) {

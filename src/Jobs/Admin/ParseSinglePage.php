@@ -12,6 +12,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Cache;
 
 class ParseSinglePage implements ShouldQueue
 {
@@ -77,6 +78,7 @@ class ParseSinglePage implements ShouldQueue
             "meta_description_news" => $this->getMetaContent($eval_meta_description_news),
             "meta_keywords_news" => $this->getMetaContent($eval_meta_keywords_news),
         ];
+        Cache::put('summaryJobs', Cache::get('summaryJobs') +1);
         ParseSinglePageToDB::dispatch($pagedb)->onQueue('singledb');//Запись title, short, slug в БД
 
         //Сохраняем картинку новости со страницы
@@ -85,15 +87,20 @@ class ParseSinglePage implements ShouldQueue
                 "slug" => $this->slug,
                 "link_image" => $this->getLinkImage($xpath, $data->path_image),
             ];
+            Cache::put('summaryJobs', Cache::get('summaryJobs') +1);
             ParseImageToDB::dispatch($image_db)->onQueue('image_db');//Сохранение картинки в БД
         }
 
         //Сохраняем галерею новости
-            $gallery_db = (object)[
-                "slug" => $this->slug,
-                "link_images_gallery" => $link_images_gallery,
-            ];
-            ParseGalleryToDB::dispatch($gallery_db)->onQueue('gallery_db');//Сохранение галереи в БД
+        $gallery_db = (object)[
+            "slug" => $this->slug,
+            "link_images_gallery" => $link_images_gallery,
+        ];
+        Cache::put('summaryJobs', Cache::get('summaryJobs') +1);
+        ParseGalleryToDB::dispatch($gallery_db)->onQueue('gallery_db');//Сохранение галереи в БД
+
+        Cache::put('completedJobs', Cache::get('completedJobs', 0)+1 );
+
     }
 
     private function getDescription($doc, $xpath, $path){
