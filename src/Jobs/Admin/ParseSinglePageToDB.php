@@ -36,26 +36,23 @@ class ParseSinglePageToDB implements ShouldQueue
      */
     public function handle()
     {
-        try {
-            $news = News::query()->where("slug", $this->pagedb->slug)->firstOrFail();
-            $news->description = $this->pagedb->description;
-            if($this->pagedb->date != 'Не найдено.'){
-                $news->created_at = $this->pagedb->date;
-                $news->published_at = $this->pagedb->date;
-                $news->updated_at = $this->pagedb->date;
+        $j=1;
+        while(News::query()->where("slug", $this->pagedb->slug)->first() == null){
+            sleep(1);
+            if($j > 60) {
+                ProgressParseNews::errorParseNewsAdd('Ошибка сохранения страницы <b> ' . $this->pagedb->slug . ' </b>. (проверьте скорость интернет соединения)');
+                exit;
             }
-            $news->save();
-        } catch (Exception $e) {
-            $news = new News;
-            $news->description = $this->pagedb->description;
-            $news->slug = $this->pagedb->slug;
-            if($this->pagedb->date != 'Не найдено.'){
-                $news->created_at = $this->pagedb->date;
-                $news->published_at = $this->pagedb->date;
-                $news->updated_at = $this->pagedb->date;
-            }
-            $news->save();
+            $j++;
         }
+            $news = News::query()->where("slug", $this->pagedb->slug)->first();
+            $news->description = $this->pagedb->description;
+            if($this->pagedb->date != 'Не найдено.'){
+                $news->created_at = $this->pagedb->date;
+                $news->published_at = $this->pagedb->date;
+                $news->updated_at = $this->pagedb->date;
+            }
+            $news->save();
 
         $this->pagedb->meta_title_news != "Не найдено." ? $this->updateMeta($this->pagedb->meta_title_news, 'title', $news->id) : ProgressParseNews::errorParseNewsAdd('Мета title страницы <b>'.$this->pagedb->slug.'</b> не найдено');
         $this->pagedb->meta_description_news != "Не найдено." ? $this->updateMeta($this->pagedb->meta_description_news, 'description', $news->id) : ProgressParseNews::errorParseNewsAdd('Мета description страницы <b>'.$this->pagedb->slug.'</b> не найдено');

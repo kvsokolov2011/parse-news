@@ -3,6 +3,7 @@
 namespace Cher4geo35\ParseNews\Jobs\Admin;
 
 use App\News;
+use Cher4geo35\ParseNews\Models\ProgressParseNews;
 use Cher4geo35\ParseNews\Traits\ParseImage;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -35,12 +36,18 @@ class ParseImageToDB implements ShouldQueue
      */
     public function handle()
     {
+        $j=1;
         while(News::query()->where("slug", $this->image_db->slug)->first() == null){
             sleep(1);
+            if($j > 60) {
+                ProgressParseNews::errorParseNewsAdd('Картинку <b> ' . $this->image_db->slug . ' </b> не удалось сохранить. (проверьте скорость интернет соединения)');
+                exit;
+            }
+            $j++;
         }
         $news = News::query()->where("slug", $this->image_db->slug)->first();
         $image = $this->uploadImages($this->image_db->link_image, 'news/main');
-        $news->image()->associate($image);
+        $news->main_image = $image->id;
         $news->save();
     }
 }
