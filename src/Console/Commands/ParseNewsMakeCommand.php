@@ -23,7 +23,6 @@ class ParseNewsMakeCommand extends BaseConfigModelCommand
                     {--models : Export models}
                     {--config : Make config}
                     {--controllers : Export controllers}
-                    {--scss : Export scss files}
                     {--vue : Export vue files}
                     {--jobs : Export jobs}';
 
@@ -111,9 +110,9 @@ class ParseNewsMakeCommand extends BaseConfigModelCommand
             $this->makeConfig();
         }
 
-        if ($this->option("scss") || $all) {
-            $this->makeScssIncludes('app');
-        }
+//        if ($this->option("scss") || $all) {
+//            $this->makeScssIncludes('app');
+//        }
 
 //        if ($this->option("policies") || $all) {
 //            $this->makeRules();
