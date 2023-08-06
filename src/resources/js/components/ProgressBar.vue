@@ -4,7 +4,9 @@
             <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100" v-bind:style="{'width': persentWidth  }"></div>
         </div>
         <div class="my-4">
-            <h4>Результат импорта: <span style="color: green">{{ parseNewsResult }}</span></h4><br>
+            <h4 v-if="lastJobs">Количество оставшихся задач импорта: <span>{{ lastJobs }}</span></h4>
+            <h4 v-else>Результат импорта: <span style="color: green">{{ parseNewsResult }}</span></h4>
+            <br>
             <h5>Ошибки импорта:</h5>
             <div class="progress-bar__errors" v-html="parseNewsError"></div>
         </div>
@@ -21,13 +23,15 @@
                 stop: 0,
                 parseNewsResult: '',
                 parseNewsError: '',
+                lastJobs: 0,
             }
         },
 
         methods: {
             getProgress() {
                 axios.get(this.url).then((response) => {
-                    if(this.width < response.data.width) this.width = response.data.width;
+                    this.width = response.data.width;
+                    this.lastJobs = response.data.lastJobs;
                     if(response.data.width === 0) this.stop++;
                     if(this.width >= 100 || response.data.error === 'Ошибка обработчика очередей.') {
                         clearInterval(this.timer);

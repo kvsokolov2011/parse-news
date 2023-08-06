@@ -2,9 +2,9 @@
 
 namespace Cher4geo35\ParseNews\Jobs\Admin;
 
-use App\Http\Controllers\Vendor\ParseNews\Admin\ParseNewsController;
 use App\Meta;
 use App\News;
+use Cher4geo35\ParseNews\Models\ProgressParseNews;
 use Cher4geo35\ParseNews\Traits\ParseImage;
 use Exception;
 use Illuminate\Bus\Queueable;
@@ -12,7 +12,6 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Cache;
 
 class ParseSinglePageToDB implements ShouldQueue
 {
@@ -40,26 +39,27 @@ class ParseSinglePageToDB implements ShouldQueue
         try {
             $news = News::query()->where("slug", $this->pagedb->slug)->firstOrFail();
             $news->description = $this->pagedb->description;
-            $news->created_at = $this->pagedb->date;
-            $news->published_at = $this->pagedb->date;
-            $news->updated_at = $this->pagedb->date;
+            if($this->pagedb->date != 'Не найдено.'){
+                $news->created_at = $this->pagedb->date;
+                $news->published_at = $this->pagedb->date;
+                $news->updated_at = $this->pagedb->date;
+            }
             $news->save();
-
         } catch (Exception $e) {
             $news = new News;
             $news->description = $this->pagedb->description;
             $news->slug = $this->pagedb->slug;
-            $news->created_at = $this->pagedb->date;
-            $news->published_at = $this->pagedb->date;
-            $news->updated_at = $this->pagedb->date;
+            if($this->pagedb->date != 'Не найдено.'){
+                $news->created_at = $this->pagedb->date;
+                $news->published_at = $this->pagedb->date;
+                $news->updated_at = $this->pagedb->date;
+            }
             $news->save();
         }
 
-        $this->pagedb->meta_title_news != "Не найдено." ? $this->updateMeta($this->pagedb->meta_title_news, 'title', $news->id) : $this->addError('Мета title страницы'.$this->pagedb->slug.'не найдено');
-        $this->pagedb->meta_description_news != "Не найдено." ? $this->updateMeta($this->pagedb->meta_description_news, 'description', $news->id) : $this->addError('Мета description страницы'.$this->pagedb->slug.'не найдено');
-        $this->pagedb->meta_keywords_news != "Не найдено." ? $this->updateMeta($this->pagedb->meta_keywords_news, 'keywords', $news->id) : $this->addError('Мета keywords страницы'.$this->pagedb->slug.'не найдено');
-
-        Cache::put('completedJobs', Cache::get('completedJobs', 0)+1 );
+        $this->pagedb->meta_title_news != "Не найдено." ? $this->updateMeta($this->pagedb->meta_title_news, 'title', $news->id) : ProgressParseNews::errorParseNewsAdd('Мета title страницы <b>'.$this->pagedb->slug.'</b> не найдено');
+        $this->pagedb->meta_description_news != "Не найдено." ? $this->updateMeta($this->pagedb->meta_description_news, 'description', $news->id) : ProgressParseNews::errorParseNewsAdd('Мета description страницы <b>'.$this->pagedb->slug.'</b> не найдено');
+        $this->pagedb->meta_keywords_news != "Не найдено." ? $this->updateMeta($this->pagedb->meta_keywords_news, 'keywords', $news->id) : ProgressParseNews::errorParseNewsAdd('Мета keywords страницы<b>'.$this->pagedb->slug.'</b> не найдено');
     }
 
     /**

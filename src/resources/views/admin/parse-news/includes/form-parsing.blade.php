@@ -19,8 +19,6 @@
 
     <progress-bar url="{{ route('admin.parse-news.get-progress') }}"></progress-bar>
 
-    @include("parse-news::admin.parse-news.includes.parsing-result")
-
     <h2 class="mt-5 mb-3 h4">Парсинг страницы со списком новостей 4geo</h2>
     @include("parse-news::admin.parse-news.includes.inputs-parse-list")
 

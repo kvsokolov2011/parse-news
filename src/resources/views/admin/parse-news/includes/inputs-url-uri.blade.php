@@ -47,7 +47,7 @@
     <input type="text"
            id="last_page_number"
            name="last_page_number"
-           value="3" {{--{{ old('last_page_number') }}"--}}
+           value="1" {{--{{ old('last_page_number') }}"--}}
            placeholder="3"
            class="form-control{{ $errors->has('last_page_number') ? ' border-danger' : '' }}">
     @if ($errors->has('last_page_number'))

@@ -5,6 +5,7 @@ namespace Cher4geo35\ParseNews\Traits;
 use App\Image;
 use App\Meta;
 use App\News;
+use Cher4geo35\ParseNews\Models\ProgressParseNews;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -14,19 +15,7 @@ use Illuminate\Support\Facades\DB;
 
 trait ParseImage
 {
-
-    /**
-     * @return void
-     *
-     * Очистка кэша
-     */
-    public function clearCache(){
-        Cache::put('summaryJobs', 0);
-        Cache::put('completedJobs', 0);
-        Cache::put('resultParseNews', '');
-        Cache::put('errorParseNews', '');
-    }
-
+    private $sumJobs = 0;
     /**
      * @param $image_news
      * @return string
@@ -56,7 +45,8 @@ trait ParseImage
      * Получаем размер картинки по ссылке
      */
     public function getSizeImage($link){
-        return array_change_key_case(get_headers($link,1))['content-length'];
+        if(isset(array_change_key_case(get_headers($link,1))['content-length'])) return array_change_key_case(get_headers($link,1))['content-length'];
+        return 0;
     }
 
     /**
@@ -69,7 +59,7 @@ trait ParseImage
         $imgExts = array("gif", "jpg", "jpeg", "png", "tiff", "tif");
         $ext = pathinfo($link, PATHINFO_EXTENSION);
         if (!in_array($ext, $imgExts)) {
-            $this->addError("Полученный файл не является изображением");
+            ProgressParseNews::errorParseNewsAdd("Полученный файл не является изображением: ".$link);
         }
     }
 
@@ -79,14 +69,17 @@ trait ParseImage
      *
      * Преобразование полученной строки даты в формат БД
      */
-    public function stringToTime($date){
-        $date = preg_replace('/,/', "", $date);
-        $ru_month = array( 'января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря' );
-        $number_month = array( '01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12' );
-        $date = str_replace($ru_month, $number_month, $date);
-        preg_match_all('/\d+/', $date, $arrDate);
-        $date = $arrDate[0][2]."-".$arrDate[0][1]."-".$arrDate[0][0]." 08:00:00";
-        return $date;
+    public function stringToTime($date, $link){
+        if( preg_match('/(\d{1,2})(.+)(января|февраля|марта|апреля|мая|июня|июля|августа|сентября|ноября|декабря|октября)(,)(.+)(\d{4})/i',trim($date), $matches) ){
+            $ru_month = array( 'января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря' );
+            $number_month = array( '01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12' );
+            $month = str_replace($ru_month, $number_month, $matches[3]);
+            $date = $matches[6]."-".$month."-".$matches[1]." 08:00:00";
+            return $date;
+        } else {
+            ProgressParseNews::errorParseNewsAdd("Дата <a target='_blank' href='". $link ."' >".$link."</a> не соответствует шаблону");
+            return 'Не найдено.';
+        }
     }
 
     /**
@@ -99,7 +92,7 @@ trait ParseImage
         $directory = public_path('storage/'.$image_uri);
         if (!file_exists($directory)){
             if (!mkdir($directory, 0755, true)) {
-                $this->addError('Не удалось создать директорию: '.$image_uri);
+                ProgressParseNews::errorParseNewsAdd('Не удалось создать директорию: '.$image_uri);
             }
         }
         return $directory;
@@ -113,15 +106,16 @@ trait ParseImage
      *Получаем файл по ссылке и сохраняем его в указанную директорию
      */
     public function putFile($link, $directory){
-        $contents = file_get_contents($link);
-        if(!$contents){
-            $this->addError('Файл по ссылке '.$link.' не удалось получить');
+        try{
+            $contents = file_get_contents($link);
+        } catch (Exception $e){
+            ProgressParseNews::errorParseNewsAdd('Файл по ссылке '.$link.' не удалось получить');
             return false;
         }
         $ext = pathinfo($link, PATHINFO_EXTENSION);
         $image_name = pathinfo($link, PATHINFO_FILENAME).'.'.$ext;
         if( file_put_contents($directory.'/'.$image_name, $contents) )  return $image_name;
-        $this->addError('Файл '.$image_name.' не удалось сохранить');
+        ProgressParseNews::errorParseNewsAdd('Файл '.$image_name.' не удалось сохранить');
         return false;
     }
 
@@ -142,8 +136,11 @@ trait ParseImage
                 'name' => $image_name,
             ]);
         } else {
-            $this->addError('В результате парсинга картинка не найдена');
-            return false;
+            ProgressParseNews::errorParseNewsAdd('В результате парсинга картинка не найдена: '.$link);
+            return Image::create([
+                'path' => '',
+                'name' => 'Не найдено.',
+            ]);
         }
     }
 
@@ -214,26 +211,11 @@ trait ParseImage
      * Получение строки мета, очистка от лишних пробелов
      */
     public function getMetaContent($eval){
-        if( $eval->length !=0){
+        if( $eval->length != 0){
             foreach($eval as $item){
                 return trim($item->textContent . PHP_EOL);
             }
         }
+        return "Не найдено.";
     }
-
-    /**
-     * @param $error
-     * @return void
-     *
-     * Фиксация ошибок
-     */
-    public function addError($error){
-        if(Cache::get('errorParseNews') != '') {
-            Cache::put('errorParseNews', Cache::get('errorParseNews').'<br>'.$error);
-        } else {
-            Cache::put('errorParseNews', $error);
-        }
-
-    }
-
 }

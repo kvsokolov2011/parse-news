@@ -2,8 +2,7 @@
 
 namespace Cher4geo35\ParseNews\Jobs\Admin;
 
-use App\Meta;
-use Cher4geo35\ParseNews\Http\Controllers\Admin\ParseNewsController;
+use Cher4geo35\ParseNews\Models\ProgressParseNews;
 use Cher4geo35\ParseNews\Traits\ParseImage;
 use DOMDocument;
 use DOMXPath;
@@ -13,7 +12,6 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Cache;
 
 class ParseListPages implements ShouldQueue
 {
@@ -39,11 +37,11 @@ class ParseListPages implements ShouldQueue
     {
         $data = $this->data;
         try {
-            $client = new \GuzzleHttp\Client(['base_uri' => $data->link_site, 'timeout' => 2.0, 'connect_timeout' => 5, ]);
+            $client = new \GuzzleHttp\Client(['base_uri' => $data->link_site, 'timeout' => 5.0, 'connect_timeout' => 10, ]);
             $response = $client->request('GET', $data->uri_news . $data->uri_paginator, ['verify' => false]);
         } catch (Exception $e) {
-            $this->addError('Проблема парсинга страницы списка новостей: '.$data->uri_news . $data->uri_paginator);
-            return false;
+            ProgressParseNews::errorParseNewsAdd('Проблема парсинга страницы списка новостей: '.$data->uri_news . $data->uri_paginator);
+            exit;
         }
 
         $htmlString = (string) $response->getBody();
@@ -72,10 +70,11 @@ class ParseListPages implements ShouldQueue
 
                 $slug = end($slug);
                 $title = $eval_title_news[$key] ? trim($eval_title_news[$key]->textContent.PHP_EOL) : "Не найдено.";
-                if($title == "Не найдено.") $this->addError('Заголовок '. $link .' не найден');
+
+                if($title == "Не найдено.") ProgressParseNews::errorParseNewsAdd("Заголовок <a target='_blank' href='".$link."'>". $link ."</a> не найден");
 
                 $short = $eval_short_news[$key] ? trim($eval_short_news[$key]->textContent.PHP_EOL) : "Не найдено.";
-                if($short == "Не найдено.") $this->addError('Short '. $link .' не найден');
+                if($short == "Не найдено.") ProgressParseNews::errorParseNewsAdd("Short <a target='_blank' href='".$link."'>". $link ."</a> не найден");
 
                 //Сохраняем картинку новости из списка новостей
                 if($data->source_image == 'list'){
@@ -85,11 +84,10 @@ class ParseListPages implements ShouldQueue
                             "slug" => $slug,
                             "link_image" => $link_image,
                         ];
-                        Cache::put('summaryJobs', Cache::get('summaryJobs') +1);
-                        //Сохранение картинки в БД
+
                         ParseImageToDB::dispatch($image_db)->onQueue('image_db');
                     } else {
-                        $this->addError('Картинка в списке новостей не найдена');
+                        ProgressParseNews::errorParseNewsAdd("Картинка в списке новостей не найдена: <a href='". $data->link_site . $data->uri_news . $data->uri_paginator."'>". $data->link_site . $data->uri_news . $data->uri_paginator."</a>");
                     }
                 }
 
@@ -97,11 +95,11 @@ class ParseListPages implements ShouldQueue
                                     "slug" => $slug,
                                     "title" => $title,
                                     "short" => $short,
-                                    "meta_title_news" => $eval_meta_title_news ? $this->getMetaContent($eval_meta_title_news) : "Не найдено.",
-                                    "meta_description_news" => $eval_meta_description_news ? $this->getMetaContent($eval_meta_description_news) : "Не найдено.",
-                                    "meta_keywords_news" => $eval_meta_keywords_news ? $this->getMetaContent($eval_meta_keywords_news) : "Не найдено.",
+                                    "meta_title_news" => $this->getMetaContent($eval_meta_title_news),
+                                    "meta_description_news" => $this->getMetaContent($eval_meta_description_news),
+                                    "meta_keywords_news" => $this->getMetaContent($eval_meta_keywords_news),
                                 ];
-                Cache::put('summaryJobs', Cache::get('summaryJobs') +1);
+
                 ParseListPagesToDB::dispatch($listdb)->onQueue('listdb');//Запись title, short, slug в БД
 
                 $single = (object)[
@@ -109,14 +107,11 @@ class ParseListPages implements ShouldQueue
                     "link" => $link,
                     "data" => $data,
                 ];
-                Cache::put('summaryJobs', Cache::get('summaryJobs') +1);
+
                 ParseSinglePage::dispatch($single)->onQueue('single');//Парсинг страницы новости
             }
         } else {
-            $this->addError('Не найдены ссылки на страницы новостей');
+            ProgressParseNews::errorParseNewsAdd('Не найдены ссылки на страницы новостей: '.$data->uri_paginator);
         }
-
-        Cache::put('completedJobs', Cache::get('completedJobs', 0)+1 );
     }
-
 }

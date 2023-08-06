@@ -2,13 +2,11 @@
 
 namespace Cher4geo35\ParseNews\Http\Controllers\Admin;
 
-use App\News;
 use Cher4geo35\ParseNews\Jobs\Admin\ParseListPages;
+use Cher4geo35\ParseNews\Models\ProgressParseNews;
 use Cher4geo35\ParseNews\Traits\ParseImage;
 use Illuminate\Http\Request;
-use Illuminate\Queue\Jobs\Job;
 use Illuminate\Routing\Controller as BaseController;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
@@ -23,7 +21,6 @@ class ParseNewsController extends BaseController
      */
     private $data;
 
-
     /**
      * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\View\Factory|\Illuminate\Contracts\View\View
      *
@@ -31,7 +28,6 @@ class ParseNewsController extends BaseController
      */
     public function index()
     {
-        $this->clearCache();
         if( $this->queueIsNotEmpty() ){
             session()->flash('status', 'Идет процесс импорта новостей.');
             return view("parse-news::admin.parse-news.index");
@@ -59,20 +55,27 @@ class ParseNewsController extends BaseController
      *
      */
     public function getProgress(){
-        if(Cache::get('summaryJobs', 0) != 0){
-            $progress = Cache::get('completedJobs', 0)*100/Cache::get('summaryJobs');
+        $lastJobs = $this->queueIsNotEmpty();
+        if(ProgressParseNews::summaryJobs() != 0){
+            $progress = 100 * (ProgressParseNews::summaryJobs() - $lastJobs)/ProgressParseNews::summaryJobs();
             if( $this->jobsFailed() )  {
-                Cache::put('errorParseNews', 'Ошибка обработчика очередей.');
+                ProgressParseNews::errorParseNewsAdd('Ошибка обработчика очередей.');
                 $this->clearDBJobs();
             }
-            if($progress >= 100) Cache::put('resultParseNews', 'Импорт новостей прошел успешно');
+            if($progress >= 100 && !$this->jobsFailed() ){
+                ProgressParseNews::resultParseNewsAdd('Импорт выполнен.');
+            } else {
+                ProgressParseNews::resultParseNewsAdd('При импорте возникли проблемы');
+            }
             return ['width' => $progress,
-                    'result' => Cache::get('resultParseNews'),
-                    'error' => Cache::get('errorParseNews')];
+                    'result' => ProgressParseNews::resultParseNews(),
+                    'error' => ProgressParseNews::errorParseNews(),
+                    'lastJobs' => $lastJobs ];
         } else {
             return ['width' => 0,
-                    'result' => Cache::get('resultParseNews'),
-                    'error' => Cache::get('errorParseNews')];
+                    'result' => ProgressParseNews::resultParseNews(),
+                    'error' => ProgressParseNews::errorParseNews(),
+                'lastJobs' => $lastJobs ];
         }
     }
 
@@ -100,17 +103,13 @@ class ParseNewsController extends BaseController
                 ->route("admin.parse-news.index")
                 ->with('danger', $check);
         }
-        // Очистка новостей и их картинок и мета
         $this->clearDBNewsAndFiles();
-        // Очистка переменных progress bar и ошибок
-        $this->clearCache();
-
+        ProgressParseNews::clearProgress();
         //Перебор страниц
         for($i=1; $i <= $this->data->last_page_number; $i++){
             $dataPage = clone $this->data;
             $dataPage->uri_paginator = $dataPage->uri_paginator.$i;
-            Cache::put('summaryJobs', Cache::get('summaryJobs') +1);
-            //Парсим одну страницу всего списка новостей
+            ProgressParseNews::summaryJobsIncrement();
             ParseListPages::dispatch($dataPage)->onQueue('list');
         }
 
@@ -120,14 +119,16 @@ class ParseNewsController extends BaseController
     /**
      * @return bool
      *
-     * true - есть необработанные очереди
+     * количество необработанных очередей - есть необработанные очереди
      */
     private function queueIsNotEmpty(){
+        $count = 0;
         foreach (self::QUEUE as $item) {
             $jobs = DB::table('jobs')
                 ->where('queue', $item)->get();
-            if(count($jobs)) return true;
+            if(count($jobs)) $count = $count + count($jobs);
         }
+        if($count) return $count;
         return false;
     }
 
@@ -161,9 +162,6 @@ class ParseNewsController extends BaseController
         if(!$this->isValidURL($link_site)) return "Не валидный адрес сайта!";
         if(!$this->isValidURL($link_site.$uri_news)) return  "Не валидная ссылка на страницу новости!";
         if(!$this->isValidURL($link_site.$uri_news.$uri_paginator."1")) return  "Не валидный пагинатор!";
-        for($i=1; $i <= $last_page_number; $i++){
-            if(!$this->isValidURL($link_site.$uri_news.$uri_paginator.$i)) return  "Не валидный номер последней страницы!";
-        }
 
         $this->data = (object)[
             "link_site" => $link_site,

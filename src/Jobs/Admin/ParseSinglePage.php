@@ -2,6 +2,7 @@
 
 namespace Cher4geo35\ParseNews\Jobs\Admin;
 
+use Cher4geo35\ParseNews\Models\ProgressParseNews;
 use Cher4geo35\ParseNews\Traits\ParseImage;
 use DOMDocument;
 use DOMXPath;
@@ -11,7 +12,6 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Cache;
 
 class ParseSinglePage implements ShouldQueue
 {
@@ -38,13 +38,12 @@ class ParseSinglePage implements ShouldQueue
     public function handle()
     {
         $data = $this->data;
-
         try {
-            $client = new \GuzzleHttp\Client(['base_uri' => $this->link, 'timeout' => 2.0, 'connect_timeout' => 5, ]);
+            $client = new \GuzzleHttp\Client(['base_uri' => $this->link, 'timeout' => 5.0, 'connect_timeout' => 10, ]);
             $response = $client->request('GET', '', ['verify' => false]);
         } catch (Exception $e) {
-            $this->addError('Проблема с парсингом страницы новости');
-            return false;
+            ProgressParseNews::errorParseNewsAdd("Проблема с парсингом страницы новости: <a  target='_blank' href='$this->link'>". $this->link."</a>");
+            exit;
         }
 
         $htmlString = (string) $response->getBody();
@@ -66,19 +65,19 @@ class ParseSinglePage implements ShouldQueue
                 $link_images_gallery[] = $this->getAndClearLink($link_image_gallery);
             }
         } else {
-            $this->addError("Галерея на странице <a target='_blank' href='".$this->link."'>".$this->link."</a> не найдена");
+            ProgressParseNews::errorParseNewsAdd("Галерея на странице <a target='_blank' href='".$this->link."'>".$this->link."</a> не найдена");
         }
 
         //Сохраняем описание, дату новости
         $pagedb = (object)[
-            "description" => $this->getDescription($doc, $xpath, $data->path_description),
-            "date" => $this->getDate($xpath, $data->path_date),
+            "description" => $this->getDescription($doc, $xpath, $data->path_description, $this->link),
+            "date" => $this->getDate($xpath, $data->path_date, $this->link),
             "slug" => $this->slug,
-            "meta_title_news" => $eval_meta_title_news ? $this->getMetaContent($eval_meta_title_news) : "Не найдено.",
-            "meta_description_news" => $eval_meta_description_news ? $this->getMetaContent($eval_meta_description_news) : "Не найдено.",
-            "meta_keywords_news" => $eval_meta_keywords_news ? $this->getMetaContent($eval_meta_keywords_news) : "Не найдено.",
+            "meta_title_news" => $this->getMetaContent($eval_meta_title_news),
+            "meta_description_news" => $this->getMetaContent($eval_meta_description_news),
+            "meta_keywords_news" => $this->getMetaContent($eval_meta_keywords_news),
         ];
-        Cache::put('summaryJobs', Cache::get('summaryJobs') +1);
+
         ParseSinglePageToDB::dispatch($pagedb)->onQueue('singledb');//Запись title, short, slug в БД
 
         //Сохраняем картинку новости со страницы
@@ -89,7 +88,6 @@ class ParseSinglePage implements ShouldQueue
                     "slug" => $this->slug,
                     "link_image" => $link_image,
                 ];
-                Cache::put('summaryJobs', Cache::get('summaryJobs') +1);
                 //Сохранение картинки в БД
                 ParseImageToDB::dispatch($image_db)->onQueue('image_db');
             }
@@ -101,12 +99,10 @@ class ParseSinglePage implements ShouldQueue
                 "slug" => $this->slug,
                 "link_images_gallery" => $link_images_gallery,
             ];
-            Cache::put('summaryJobs', Cache::get('summaryJobs') +1);
+
             //Сохранение галереи в БД
             ParseGalleryToDB::dispatch($gallery_db)->onQueue('gallery_db');
         }
-
-        Cache::put('completedJobs', Cache::get('completedJobs', 0)+1 );
     }
 
     /**
@@ -117,19 +113,20 @@ class ParseSinglePage implements ShouldQueue
      *
      *Получаем html код описания новостей без классов
      */
-    private function getDescription($doc, $xpath, $path){
+    private function getDescription($doc, $xpath, $path, $link){
         $description_news = "";
         $nodes = $xpath->query($path);
         if(count($nodes)) {
-            foreach($nodes as $full_name) {
-                $description_news .= trim($doc->saveHTML($full_name));
+            foreach($nodes as $node) {
+                $description_news .= trim($doc->saveHTML($node));
             }
-            //TODO почистить от классов
-            return preg_replace('/<img[^>]+>/', "", $description_news);
+            //Удаление картинок и ненужных атрибутов тегов
+            $description_news = preg_replace('/<img[^>]+>/', "", $description_news);
+            $description_news = preg_replace('/(class|style|id|lang|rel) *= *((" *.*? *")|(\' *.*? *\'))/i',"",$description_news);
+            return $description_news;
         }
-        $this->addError('Описание новости не найдено');
+        ProgressParseNews::errorParseNewsAdd("Описание новости не найдено: <a target='_blank' href='".$link."'>".$link."</a>");
         return '<h3>Описание новости не найдено</h3>';
-
     }
 
     /**
@@ -146,7 +143,6 @@ class ParseSinglePage implements ShouldQueue
             foreach ($eval_image_news as $image_news) {
                 $temp_link_image = $this->getAndClearLink($image_news);
                 $this->checkImage($temp_link_image);
-
                 if ($first) {
                     $link_image = $temp_link_image;
                     $first = false;
@@ -157,7 +153,7 @@ class ParseSinglePage implements ShouldQueue
                 }
             }
         } else {
-            $this->addError("Главная картинка на странице новости не найдена: <a target='_blank' href='".$link."'>".$link."</a>");
+            ProgressParseNews::errorParseNewsAdd("Главная картинка на странице новости не найдена: <a target='_blank' href='".$link."'>".$link."</a>");
             return false;
         }
         return $link_image;
@@ -170,15 +166,15 @@ class ParseSinglePage implements ShouldQueue
      *
      * Парсим дату
      */
-    private function getDate($xpath, $path){
+    private function getDate($xpath, $path, $link){
         $eval_date_news = $xpath->evaluate($path);
         if( $eval_date_news->length > 0){
             foreach ($eval_date_news as $date_news){
                 $date = $date_news->textContent.PHP_EOL;
-                return $this->stringToTime($date);
+                return $this->stringToTime($date, $link);
             }
         } else {
-            $this->addError('Дата опубликования новости не найдена');
+            ProgressParseNews::errorParseNewsAdd("Дата опубликования новости <a target='_blank' href='".$link."'>".$link."</a> не найдена");
             return "Не найдено.";
         }
     }

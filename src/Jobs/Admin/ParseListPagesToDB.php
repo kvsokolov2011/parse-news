@@ -4,6 +4,7 @@ namespace Cher4geo35\ParseNews\Jobs\Admin;
 
 use App\Meta;
 use App\News;
+use Cher4geo35\ParseNews\Models\ProgressParseNews;
 use Cher4geo35\ParseNews\Traits\ParseImage;
 use Exception;
 use Illuminate\Bus\Queueable;
@@ -11,7 +12,6 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Cache;
 
 class ParseListPagesToDB implements ShouldQueue
 {
@@ -36,13 +36,11 @@ class ParseListPagesToDB implements ShouldQueue
      */
     public function handle()
     {
-
         try {
             $news = News::query()->where("slug", $this->listdb->slug)->firstOrFail();
             $news->title = $this->listdb->title;
             $news->short = $this->listdb->short;
             $news->save();
-
         } catch (Exception $e) {
             $news = new News;
             $news->title = $this->listdb->title;
@@ -51,11 +49,9 @@ class ParseListPagesToDB implements ShouldQueue
             $news->save();
         }
 
-        $this->listdb->meta_title_news != 'Не найдено.' ? $this->updateMeta($this->listdb->meta_title_news, 'title') : $this->addError('Мета title не найдено');
-        $this->listdb->meta_description_news != 'Не найдено.' ? $this->updateMeta($this->listdb->meta_description_news, 'description') : $this->addError('Мета description не найдено');
-        $this->listdb->meta_keywords_news != 'Не найдено.' ? $this->updateMeta($this->listdb->meta_keywords_news, 'keywords') : $this->addError('Мета keywords не найдено');
-
-        Cache::put('completedJobs', Cache::get('completedJobs', 0)+1 );
+        $this->listdb->meta_title_news != 'Не найдено.' ? $this->updateMeta($this->listdb->meta_title_news, 'title') : ProgressParseNews::errorParseNewsAdd('Мета title страницы <b>'. $this->listdb->title.'</b> не найдено');
+        $this->listdb->meta_description_news != 'Не найдено.' ? $this->updateMeta($this->listdb->meta_description_news, 'description') : ProgressParseNews::errorParseNewsAdd('Мета description  страницы <b>'. $this->listdb->title.'</b> не найдено');
+        $this->listdb->meta_keywords_news != 'Не найдено.' ? $this->updateMeta($this->listdb->meta_keywords_news, 'keywords') : ProgressParseNews::errorParseNewsAdd('Мета keywords  страницы <b>'. $this->listdb->title.'</b> не найдено');
     }
 
     /**

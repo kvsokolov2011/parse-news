@@ -7,9 +7,11 @@ use Illuminate\Support\ServiceProvider;
 
 class ParseNewsServiceProvider extends ServiceProvider
 {
-
     public function boot()
     {
+        // Подгрузка миграций.
+        $this->loadMigrationsFrom(__DIR__ . '/database/migrations');
+
          // Подгрузка шаблонов.
          $this->loadViewsFrom(__DIR__ . '/resources/views', 'parse-news');
 

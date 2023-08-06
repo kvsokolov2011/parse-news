@@ -10,7 +10,6 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Cache;
 
 class ParseGalleryToDB implements ShouldQueue
 {
@@ -30,8 +29,6 @@ class ParseGalleryToDB implements ShouldQueue
     }
 
     /**
-     * Execute the job.
-     *
      * @return void
      */
     public function handle()
@@ -45,7 +42,6 @@ class ParseGalleryToDB implements ShouldQueue
                 }
             }
             $news->save();
-
         } catch (Exception $e) {
             $news = new News;
             $news->slug = $this->gallery_db->slug;
@@ -57,7 +53,5 @@ class ParseGalleryToDB implements ShouldQueue
             }
             $news->save();
         }
-
-        Cache::put('completedJobs', Cache::get('completedJobs', 0)+1 );
     }
 }

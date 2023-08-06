@@ -8,7 +8,6 @@ use PortedCheese\BaseSettings\Console\Commands\BaseConfigModelCommand;
 
 class ParseNewsMakeCommand extends BaseConfigModelCommand
 {
-
     protected $scssIncludes = [
         "app" => ["parse-news"],
     ];
@@ -21,6 +20,7 @@ class ParseNewsMakeCommand extends BaseConfigModelCommand
     protected $signature = 'make:parse-news
                     {--all : Run all}
                     {--menu : Config menu}
+                    {--models : Export models}
                     {--config : Make config}
                     {--controllers : Export controllers}
                     {--scss : Export scss files}
@@ -36,8 +36,10 @@ class ParseNewsMakeCommand extends BaseConfigModelCommand
     protected $vendorName = 'Cher4geo35';
     protected $packageName = "ParseNews";
 
+    protected $models = ['ProgressParseNews'];
+
     protected $controllers = [
-        "Admin" => ["ParseNewsController", "ParseNewsController"]
+        "Admin" => ["ParseNewsController"]
     ];
 
     protected $jobs = [
@@ -51,7 +53,6 @@ class ParseNewsMakeCommand extends BaseConfigModelCommand
             'progress-bar' => "ProgressBar",
         ],
     ];
-
 
     protected $configName = "parse-news";
     protected $configTitle = "Парсинг новостей";
@@ -94,10 +95,10 @@ class ParseNewsMakeCommand extends BaseConfigModelCommand
             $this->makeVueIncludes('admin');
         }
 
-//        if ($this->option("models") || $all) {
-//            $this->exportModels();
-//        }
-//
+        if ($this->option("models") || $all) {
+            $this->exportModels();
+        }
+
         if ($this->option("controllers") || $all) {
             $this->exportControllers("Admin");
         }
