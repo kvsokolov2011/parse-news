@@ -1,5 +1,0 @@
-@extends('layouts.boot')
-
-@section('content')
-    @yield('admin')
-@endsection

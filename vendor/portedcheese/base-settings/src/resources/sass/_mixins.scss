@@ -1,6 +1,0 @@
-@mixin transformX($percent) {
-  -webkit-transform: translateX($percent);
-  -moz-transform: translateX($percent);
-  -ms-transform: translateX($percent);
-  transform: translateX($percent);
-}
