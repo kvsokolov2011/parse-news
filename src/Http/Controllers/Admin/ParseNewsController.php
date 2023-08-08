@@ -106,12 +106,18 @@ class ParseNewsController extends BaseController
         $this->clearDBNewsAndFiles();
         ProgressParseNews::clearProgress();
         //Перебор страниц
-        for($i=1; $i <= $this->data->last_page_number; $i++){
-            $dataPage = clone $this->data;
-            $dataPage->uri_paginator = $dataPage->uri_paginator.$i;
-            ProgressParseNews::summaryJobsIncrement();
-            ParseListPages::dispatch($dataPage)->onQueue('list');
+        if($this->data->first_page_number <= $this->data->last_page_number){
+            for($i=$this->data->first_page_number; $i <= $this->data->last_page_number; $i++){
+                $dataPage = clone $this->data;
+                $dataPage->uri_paginator = $dataPage->uri_paginator.$i;
+                ProgressParseNews::summaryJobsIncrement();
+                ParseListPages::dispatch($dataPage)->onQueue('list');
+            }
+        } else {
+            ProgressParseNews::errorParseNewsAdd('Неверно заданы номера страниц');
+            return redirect(route('admin.parse-news.index'));
         }
+
 
         return redirect(route('admin.parse-news.index'));
     }
@@ -156,6 +162,7 @@ class ParseNewsController extends BaseController
         $link_site = trim($request->link_site);
         $uri_news = trim($request->uri_news);
         $uri_paginator = trim($request->uri_paginator);
+        $first_page_number = trim($request->first_page_number);
         $last_page_number = trim($request->last_page_number);
 
         //Проверка валидности адресов
@@ -167,6 +174,7 @@ class ParseNewsController extends BaseController
             "link_site" => $link_site,
             "uri_news" => $uri_news,
             "uri_paginator" => $uri_paginator,
+            "first_page_number" => $first_page_number,
             "last_page_number" => $last_page_number,
             "source_image" => $request->source_image,
             "path_title" => trim($request->path_title),
