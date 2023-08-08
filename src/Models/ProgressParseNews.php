@@ -150,7 +150,7 @@ class ProgressParseNews extends Model
         self::serviceRequest('err_add');
         $query = ProgressParseNews::first();
         if($query->error) {
-            $query->error = $query->error . "<br>" . $error;
+            $query->error = $error ."<br>". $query->error;
         } else {
             $query->error = $error;
         }

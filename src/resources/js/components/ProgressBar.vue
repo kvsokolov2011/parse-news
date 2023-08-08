@@ -33,7 +33,7 @@
                     this.width = response.data.width;
                     this.lastJobs = response.data.lastJobs;
                     if(response.data.width === 0) this.stop++;
-                    if(this.width >= 100 || response.data.error === 'Ошибка обработчика очередей.') {
+                    if(this.width >= 100 || response.data.error === 'Ошибка обработчика очередей. Импорт прекращен.') {
                         clearInterval(this.timer);
                         document.getElementById('btn-parse').classList.remove('d-none');
                         document.querySelector(".alert-primary").classList.add('d-none');
@@ -57,7 +57,7 @@
 <style scoped>
     .progress-bar__errors{
         width: 100%;
-        height: 6rem;
+        height: 12rem;
         overflow-y: scroll;
         background-color: #eee;
         border: 0.0625rem solid #aaa;

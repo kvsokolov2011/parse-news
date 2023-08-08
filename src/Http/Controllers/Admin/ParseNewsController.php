@@ -59,7 +59,8 @@ class ParseNewsController extends BaseController
         if(ProgressParseNews::summaryJobs() != 0){
             $progress = 100 * (ProgressParseNews::summaryJobs() - $lastJobs)/ProgressParseNews::summaryJobs();
             if( $this->jobsFailed() )  {
-                ProgressParseNews::errorParseNewsAdd('Ошибка обработчика очередей.');
+                $this->getErrorsFailedJobs();
+                ProgressParseNews::errorParseNewsAdd('Ошибка обработчика очередей. Импорт прекращен.');
                 $this->clearDBJobs();
             }
             if($progress >= 100 && !$this->jobsFailed() ){
@@ -204,5 +205,21 @@ class ParseNewsController extends BaseController
             if (strpos($file_headers[0], "200 OK") > 0) return true;
         }
         return false;
+    }
+
+    private function getErrorsFailedJobs(){
+        foreach (self::QUEUE as $item) {
+            $failed_jobs = DB::table('failed_jobs')
+                ->where('queue', $item)->get();
+            foreach($failed_jobs as $job){
+                if(preg_match('/Stack trace:/', $job->exception) ){
+                    $error = explode('Stack trace:', $job->exception)[0];
+                }
+                ProgressParseNews::errorParseNewsAdd('Ошибка обработки очереди: <i>'.$error.'</i>');
+            }
+        }
+        $this->clearDBFailedJobs();
+        $this->clearDBJobs();
+        return true;
     }
 }
