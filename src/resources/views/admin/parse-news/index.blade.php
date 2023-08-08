@@ -4,13 +4,16 @@
 @section('header-title', 'Импорт новостей')
 
 @section('admin')
-    <div class="col-12">
-        <div class="card">
-            <div class="card-body">
-                @include("parse-news::admin.parse-news.includes.form-parsing")
+    @if(session()->get('status') != 'Идет процесс импорта новостей. Попробуйте позже.')
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <progress-bar   url="{{ route('admin.parse-news.get-progress') }}"
+                                    import="{{ route('admin.parse-news.create') }}"></progress-bar>
+                </div>
             </div>
         </div>
-    </div>
+    @endif
 
 
 

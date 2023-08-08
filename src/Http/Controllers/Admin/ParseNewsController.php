@@ -29,9 +29,10 @@ class ParseNewsController extends BaseController
     public function index()
     {
         if( $this->queueIsNotEmpty() ){
-            session()->flash('status', 'Идет процесс импорта новостей.');
+            session()->flash('status', 'Идет процесс импорта новостей. Попробуйте позже.');
             return view("parse-news::admin.parse-news.index");
         }
+        ProgressParseNews::clearProgress();
         return view("parse-news::admin.parse-news.index");
     }
 
@@ -82,27 +83,18 @@ class ParseNewsController extends BaseController
 
     /**
      * @param Request $request
-     * @return \Illuminate\Http\RedirectResponse
+     * @return array|true[]
      *
      * Парсим страницы новостей
      */
     public function create(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            "link_site" => "required|url|min:2",
-            "uri_news" => "required|min:2",
-            "uri_paginator" => "min:2",
-            "last_page_number" => "integer|numeric|min:1",
-        ]);
-        if( $validator->fails() ) {
-            return  redirect(route('admin.parse-news.index'))->withErrors($validator->errors())->withInput();
-        }
-
         $check = $this->validateInput($request);
         if($check){
-            return redirect()
-                ->route("admin.parse-news.index")
-                ->with('danger', $check);
+            return [
+                'success' => false,
+                'result' => $check,
+            ];
         }
         $this->clearDBNewsAndFiles();
         ProgressParseNews::clearProgress();
@@ -116,11 +108,15 @@ class ParseNewsController extends BaseController
             }
         } else {
             ProgressParseNews::errorParseNewsAdd('Неверно заданы номера страниц');
-            return redirect(route('admin.parse-news.index'));
+            return [
+                'success' => false,
+                'result' => 'Неверно заданы номера страниц',
+            ];
         }
 
-
-        return redirect(route('admin.parse-news.index'));
+        return [
+            'success' => true
+        ];
     }
 
     /**
