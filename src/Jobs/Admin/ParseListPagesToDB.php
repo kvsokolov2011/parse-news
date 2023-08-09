@@ -38,20 +38,18 @@ class ParseListPagesToDB implements ShouldQueue
     {
         try {
             $news = News::query()->where("slug", $this->listdb->slug)->firstOrFail();
-            $news->title = $this->listdb->title;
             $news->short = $this->listdb->short;
             $news->save();
         } catch (Exception $e) {
             $news = new News;
-            $news->title = $this->listdb->title;
             $news->slug = $this->listdb->slug;
             $news->short = $this->listdb->short;
             $news->save();
         }
 
-        $this->listdb->meta_title_news != 'Не найдено.' ? $this->updateMeta($this->listdb->meta_title_news, 'title') : ProgressParseNews::errorParseNewsAdd('Мета title страницы <b>'. $this->listdb->title.'</b> не найдено');
-        $this->listdb->meta_description_news != 'Не найдено.' ? $this->updateMeta($this->listdb->meta_description_news, 'description') : ProgressParseNews::errorParseNewsAdd('Мета description  страницы <b>'. $this->listdb->title.'</b> не найдено');
-        $this->listdb->meta_keywords_news != 'Не найдено.' ? $this->updateMeta($this->listdb->meta_keywords_news, 'keywords') : ProgressParseNews::errorParseNewsAdd('Мета keywords  страницы <b>'. $this->listdb->title.'</b> не найдено');
+        $this->listdb->meta_title_news != 'Не найдено.' ? $this->updateMeta($this->listdb->meta_title_news, 'title') : ProgressParseNews::errorParseNewsAdd('Мета title страницы  <b>'. $this->listdb->slug.'</b> не найдено');
+        $this->listdb->meta_description_news != 'Не найдено.' ? $this->updateMeta($this->listdb->meta_description_news, 'description') : ProgressParseNews::errorParseNewsAdd('Мета description  страницы  <b>'. $this->listdb->slug.'</b> не найдено');
+        $this->listdb->meta_keywords_news != 'Не найдено.' ? $this->updateMeta($this->listdb->meta_keywords_news, 'keywords') : ProgressParseNews::errorParseNewsAdd('Мета keywords  страницы  <b>'. $this->listdb->slug.'</b> не найдено');
     }
 
     /**

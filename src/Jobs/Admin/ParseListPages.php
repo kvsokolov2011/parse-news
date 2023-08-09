@@ -50,7 +50,6 @@ class ParseListPages implements ShouldQueue
         $doc->loadHTML($htmlString);
         $xpath = new DOMXPath($doc);
 
-        $eval_title_news = $xpath->evaluate($data->path_title);
         $eval_link_page_news = $xpath->evaluate($data->path_link);
         $eval_short_news = $xpath->evaluate($data->path_short);
 
@@ -69,9 +68,6 @@ class ParseListPages implements ShouldQueue
                 $slug = explode('/', $link);
 
                 $slug = end($slug);
-                $title = $eval_title_news[$key] ? trim($eval_title_news[$key]->textContent.PHP_EOL) : "Не найдено.";
-
-                if($title == "Не найдено.") ProgressParseNews::errorParseNewsAdd("Заголовок <a target='_blank' href='".$link."'>". $link ."</a> не найден");
 
                 $short = $eval_short_news[$key] ? trim($eval_short_news[$key]->textContent.PHP_EOL) : "Не найдено.";
                 if($short == "Не найдено.") ProgressParseNews::errorParseNewsAdd("Short <a target='_blank' href='".$link."'>". $link ."</a> не найден");
@@ -93,7 +89,6 @@ class ParseListPages implements ShouldQueue
 
                 $listdb = (object)[
                                     "slug" => $slug,
-                                    "title" => $title,
                                     "short" => $short,
                                     "meta_title_news" => $this->getMetaContent($eval_meta_title_news),
                                     "meta_description_news" => $this->getMetaContent($eval_meta_description_news),

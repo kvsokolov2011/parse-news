@@ -185,6 +185,8 @@ class ParseNewsController extends BaseController
             "path_meta_title" => trim($request->path_meta_title),
             "path_meta_description" => trim($request->path_meta_description),
             "path_meta_keywords" => trim($request->path_meta_keywords),
+            "min_width_image" => trim($request->min_width_image),
+            "min_size_image" => trim($request->min_size_image),
         ];
         return false;
     }

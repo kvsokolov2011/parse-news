@@ -36,6 +36,10 @@
                 </select>
             </div>
 
+            <div class="form-group">
+                <label class="mr-3">Искать картинки для галереи новостей по всему описанию новости: </label>
+                <input type="checkbox" v-model="search_image">
+            </div>
 
             <!--Прогресс бар-->
             <div class="my-4 progress">
@@ -58,11 +62,6 @@
                 <h2 class="mt-5 mb-3 h4">Парсинг страницы со списком новостей 4geo</h2>
 
                 <div class="form-group mr-md-3">
-                    <label>Путь к title новости: </label>
-                    <input type="text" v-model="path_title" class="form-control" />
-                </div>
-
-                <div class="form-group mr-md-3">
                     <label>Путь к ссылке на страницу новости: </label>
                     <input type="text" v-model="path_link" class="form-control" />
                 </div>
@@ -79,6 +78,11 @@
 
                 <h2 class="mt-5 mb-3 h4">Парсинг страницы новости 4geo</h2>
                 <div class="form-group mr-md-3">
+                    <label>Путь к title новости: </label>
+                    <input type="text" v-model="path_title" class="form-control" />
+                </div>
+
+                <div class="form-group mr-md-3">
                     <label>Путь к полному описанию новости: </label>
                     <input type="text" v-model="path_description" class="form-control" />
                 </div>
@@ -90,9 +94,19 @@
                     <label>Путь к картинке новости: </label>
                     <input type="text" v-model="path_image" class="form-control" />
                 </div>
-                <div class="form-group mr-md-3">
-                    <label>Путь к картинкам галереи: </label>
-                    <input type="text" v-model="path_gallery" class="form-control" />
+                <div class="d-flex flex-column flex-md-row">
+                    <div class="form-group mr-md-3">
+                        <label>Путь к картинкам галереи: </label>
+                        <input type="text" v-model="path_gallery" class="form-control" />
+                    </div>
+                    <div class="form-group mr-md-3">
+                        <label>Минимальная ширина картинки в галерее, px: </label>
+                        <input type="text" v-model="min_width_image" class="form-control" />
+                    </div>
+                    <div class="form-group mr-md-3">
+                        <label>Минимальный размер картинки в галерее, байт: </label>
+                        <input type="text" v-model="min_size_image" class="form-control" />
+                    </div>
                 </div>
 
                 <h2 class="mt-5 mb-3 h4">Парсинг meta 4geo</h2>
@@ -139,14 +153,16 @@
                 opacitySettings: '0',
                 heightSettings: '0',
                 inscription: 'Показать настройки >>>',
-                path_title: '//div[@class="col-md-12 news-item marginbottom20"]//div//h4//strong//a',
-                path_link: '//div[@class="col-md-12 news-item marginbottom20"]//div//h4//strong//a/@href',
-                path_short: '//div[@class="col-md-12 news-item marginbottom20"]//div//div//div[@class="post-decription marginbottom15"]',
+                path_title: '//h1',
+                path_link: '//h4//strong//a/@href',
+                path_short: "//div[contains(@class, 'post-decription')]",
                 path_image_list: '//div[@class="col-xs-12 col-sm-12 col-md-3"]//a[@class="thumbnail news-img"]//img/@src',
-                path_description: '//div[@class="default-style"]//div[@class="lp-element lp-text1"]',
-                path_date: '//div[@class="post visit-news"]//div[@class="post_date"]',
+                path_description: "//div[contains(@class, 'default-style')]/div[1]",
+                path_date: "//div[contains(@class, 'post_date')]",
                 path_image: '//div[@class="lp-element lp-text1"]//img/@src',
-                path_gallery: '//div[@class="lp-element lp-photoslider3"]//div//a[@class="previewphoto4s lp-slideshow-tile-image"]/@href',
+                search_image: false,
+                min_width_image: 150,
+                min_size_image: 50000,
                 path_meta_title: '//title',
                 path_meta_description: '//meta[@name="description"]/@content',
                 path_meta_keywords: 'path_meta_keywords',
@@ -179,6 +195,8 @@
                 formData.append("path_meta_title", this.path_meta_title);
                 formData.append("path_meta_description", this.path_meta_description);
                 formData.append("path_meta_keywords", this.path_meta_keywords);
+                formData.append("min_width_image", this.min_width_image);
+                formData.append("min_size_image", this.min_size_image);
 
                 axios
                     .post(this.import, formData, {
@@ -229,6 +247,13 @@
             },
         },
         computed: {
+            path_gallery() {
+                if(this.search_image){
+                    return "//div[contains(@class, 'default-style')]";
+                } else {
+                    return "//div[contains(@class, 'default-style')]/div[2]";
+                }
+            } ,
             pageImage() {
                 if(this.source_image === 'page'){
                     return true;

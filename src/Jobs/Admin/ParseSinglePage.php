@@ -52,24 +52,22 @@ class ParseSinglePage implements ShouldQueue
         $doc->loadHTML($htmlString);
         $xpath = new DOMXPath($doc);
 
-        $eval_gallery_news = $xpath->evaluate($data->path_gallery);
+        $eval_title_news = $xpath->evaluate($data->path_title);
+        $title = '';
+        foreach ($eval_title_news as $title_news){
+            $title = $title_news ? trim($title_news->textContent.PHP_EOL) : "Не найдено.";
+            break;
+        }
+        if($title == "Не найдено.") ProgressParseNews::errorParseNewsAdd("Заголовок <a target='_blank' href='".$this->link."'>". $this->link ."</a> не найден");
 
         //meta
         $eval_meta_title_news = $xpath->evaluate($data->path_meta_title);
         $eval_meta_description_news = $xpath->evaluate($data->path_meta_description);
         $eval_meta_keywords_news = $xpath->evaluate($data->path_meta_keywords);
 
-        $link_images_gallery = [];
-        if($eval_gallery_news->length != 0){
-            foreach($eval_gallery_news as $link_image_gallery){
-                $link_images_gallery[] = $this->getAndClearLink($link_image_gallery);
-            }
-        } else {
-            ProgressParseNews::errorParseNewsAdd("Галерея на странице <a target='_blank' href='".$this->link."'>".$this->link."</a> не найдена");
-        }
-
         //Сохраняем описание, дату новости
         $pagedb = (object)[
+            "title" => $title,
             "description" => $this->getDescription($doc, $xpath, $data->path_description, $this->link),
             "date" => $this->getDate($xpath, $data->path_date, $this->link),
             "slug" => $this->slug,
@@ -77,7 +75,6 @@ class ParseSinglePage implements ShouldQueue
             "meta_description_news" => $this->getMetaContent($eval_meta_description_news),
             "meta_keywords_news" => $this->getMetaContent($eval_meta_keywords_news),
         ];
-
         ParseSinglePageToDB::dispatch($pagedb)->onQueue('singledb');//Запись title, short, slug в БД
 
         //Сохраняем картинку новости со страницы
@@ -93,13 +90,38 @@ class ParseSinglePage implements ShouldQueue
             }
         }
 
+        $this->galleryStorage($xpath, $data);
+    }
+
+    /**
+     * @param $xpath
+     * @param $data
+     * @return void
+     *
+     * Поиск и сохранение картинок галереи страницы новостей
+     */
+    private function galleryStorage($xpath, $data){
+        $eval_gallery_news = [];
+        $eval_gallery_news[] = $xpath->evaluate($data->path_gallery.'//@src');
+        $eval_gallery_news[] = $xpath->evaluate($data->path_gallery.'//@href');
+        $link_images_gallery = [];
+        foreach ($eval_gallery_news as $item){
+            foreach ($item as $gallery_news){
+                $lnk = trim($gallery_news->textContent.PHP_EOL);
+                $lnk_arr = explode(".", $lnk);
+                if(in_array(end($lnk_arr), $this->img_exts)){
+                    if($this->getWidthImage($lnk) > $this->data->min_width_image && $this->getSizeImage($lnk) > $this->data->min_size_image){
+                        $link_images_gallery[] = $lnk;
+                    }
+                }
+            }
+        }
         //Сохраняем галерею новости
         if($link_images_gallery != []){
             $gallery_db = (object)[
                 "slug" => $this->slug,
                 "link_images_gallery" => $link_images_gallery,
             ];
-
             //Сохранение галереи в БД
             ParseGalleryToDB::dispatch($gallery_db)->onQueue('gallery_db');
         }

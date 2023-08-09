@@ -37,7 +37,7 @@ class ParseGalleryToDB implements ShouldQueue
         $j=1;
         while(News::query()->where("slug", $this->gallery_db->slug)->first() == null){
             sleep(1);
-            if($j > 60) {
+            if($j > 200) {
                 ProgressParseNews::errorParseNewsAdd('Ошибка сохранения галереи <b>' . $this->gallery_db->slug . '</b> (проверьте скорость интернет соединения)');
                 exit;
             }

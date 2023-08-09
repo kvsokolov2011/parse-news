@@ -39,13 +39,14 @@ class ParseSinglePageToDB implements ShouldQueue
         $j=1;
         while(News::query()->where("slug", $this->pagedb->slug)->first() == null){
             sleep(1);
-            if($j > 60) {
+            if($j > 200) {
                 ProgressParseNews::errorParseNewsAdd('Ошибка сохранения страницы <b> ' . $this->pagedb->slug . ' </b>. (проверьте скорость интернет соединения)');
                 exit;
             }
             $j++;
         }
             $news = News::query()->where("slug", $this->pagedb->slug)->first();
+            $news->title = $this->pagedb->title;
             $news->description = $this->pagedb->description;
             if($this->pagedb->date != 'Не найдено.'){
                 $news->created_at = $this->pagedb->date;

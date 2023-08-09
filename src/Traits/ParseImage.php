@@ -15,6 +15,8 @@ use Illuminate\Support\Facades\DB;
 
 trait ParseImage
 {
+    //Возможные расширения картинок
+    public $img_exts = array("gif", "jpg", "jpeg", "png", "tiff", "tif");
     private $sumJobs = 0;
     /**
      * @param $image_news
