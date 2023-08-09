@@ -47,9 +47,20 @@ class ParseListPagesToDB implements ShouldQueue
             $news->save();
         }
 
-        $this->listdb->meta_title_news != 'Не найдено.' ? $this->updateMeta($this->listdb->meta_title_news, 'title') : ProgressParseNews::errorParseNewsAdd('Мета title страницы  <b>'. $this->listdb->slug.'</b> не найдено');
-        $this->listdb->meta_description_news != 'Не найдено.' ? $this->updateMeta($this->listdb->meta_description_news, 'description') : ProgressParseNews::errorParseNewsAdd('Мета description  страницы  <b>'. $this->listdb->slug.'</b> не найдено');
-        $this->listdb->meta_keywords_news != 'Не найдено.' ? $this->updateMeta($this->listdb->meta_keywords_news, 'keywords') : ProgressParseNews::errorParseNewsAdd('Мета keywords  страницы  <b>'. $this->listdb->slug.'</b> не найдено');
+        if($this->listdb->first_page_of_list){
+            $this->listdb->meta_title_news != 'Не найдено.'
+                ? $this->updateMeta($this->listdb->meta_title_news, 'title')
+                : ProgressParseNews::errorParseNewsAdd("Мета title страницы  <a target='_blank' href='".$this->listdb->page_list."'>".$this->listdb->page_list."</a> не найдено.");
+
+            $this->listdb->meta_description_news != 'Не найдено.'
+                ? $this->updateMeta($this->listdb->meta_description_news, 'description')
+                : ProgressParseNews::errorParseNewsAdd("Мета description  страницы  <a target='_blank' href='".$this->listdb->page_list."'>".$this->listdb->page_list."</a> не найдено");
+
+            print_r($this->listdb->meta_keywords_news);
+            $this->listdb->meta_keywords_news != 'Не найдено.'
+                ? $this->updateMeta($this->listdb->meta_keywords_news, 'keywords')
+                : ProgressParseNews::errorParseNewsAdd("Мета keywords  страницы  <a target='_blank' href='".$this->listdb->page_list."'>".$this->listdb->page_list."</a> не найдено");
+        }
     }
 
     /**

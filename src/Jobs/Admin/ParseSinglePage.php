@@ -65,6 +65,18 @@ class ParseSinglePage implements ShouldQueue
         $eval_meta_description_news = $xpath->evaluate($data->path_meta_description);
         $eval_meta_keywords_news = $xpath->evaluate($data->path_meta_keywords);
 
+        $meta_keywords_news = $this->getMetaContent($eval_meta_keywords_news);
+        if($meta_keywords_news == "Не найдено."){
+            $eval_meta_keywords_news = $xpath->evaluate("//strong[contains(@class, 'news-tag')]");
+            if($eval_meta_keywords_news){
+                $meta_keywords_news = '';
+                foreach($eval_meta_keywords_news as $item){
+                    !$meta_keywords_news ? $meta_keywords_news .= trim($item->textContent . PHP_EOL) : $meta_keywords_news .= ", ".trim($item->textContent . PHP_EOL);
+                }
+            }
+        }
+//        print_r($meta_keywords_news);
+
         //Сохраняем описание, дату новости
         $pagedb = (object)[
             "title" => $title,
@@ -73,10 +85,10 @@ class ParseSinglePage implements ShouldQueue
             "slug" => $this->slug,
             "meta_title_news" => $this->getMetaContent($eval_meta_title_news),
             "meta_description_news" => $this->getMetaContent($eval_meta_description_news),
-            "meta_keywords_news" => $this->getMetaContent($eval_meta_keywords_news),
+            "meta_keywords_news" => $meta_keywords_news,
         ];
         ParseSinglePageToDB::dispatch($pagedb)->onQueue('singledb');//Запись title, short, slug в БД
-
+//print_r($pagedb->meta_keywords_news);
         //Сохраняем картинку новости со страницы
         if($data->source_image == 'page'){
             $link_image = $this->getLinkImage($xpath, $data->path_image, $this->link);

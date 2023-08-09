@@ -62,6 +62,7 @@ class ParseListPages implements ShouldQueue
             $eval_image_news = $xpath->evaluate($data->path_image_list);
         }
 
+        $first_page_of_list = true;
         if($eval_link_page_news->length != 0){
             foreach ($eval_link_page_news as $key => $link_page_news) {
                 $link = trim($eval_link_page_news[$key]->textContent.PHP_EOL);
@@ -93,9 +94,11 @@ class ParseListPages implements ShouldQueue
                                     "meta_title_news" => $this->getMetaContent($eval_meta_title_news),
                                     "meta_description_news" => $this->getMetaContent($eval_meta_description_news),
                                     "meta_keywords_news" => $this->getMetaContent($eval_meta_keywords_news),
+                                    "page_list" => $data->link_site.$data->uri_news.$data->uri_paginator,
+                                    "first_page_of_list" => $first_page_of_list,
                                 ];
-
                 ParseListPagesToDB::dispatch($listdb)->onQueue('listdb');//Запись title, short, slug в БД
+                $first_page_of_list = false;
 
                 $single = (object)[
                     "slug" => $slug,
