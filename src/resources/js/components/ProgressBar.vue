@@ -36,6 +36,13 @@
                 </select>
             </div>
 
+            <transition name="fade">
+                <div v-if="listImage" class="form-group">
+                    <label class="mr-3">Дополнительно искать основную картинку на странице новости: </label>
+                    <input type="checkbox" v-model="search_image_add">
+                </div>
+            </transition>
+
             <div class="form-group">
                 <label class="mr-3">Искать картинки для галереи новостей по всему описанию новости: </label>
                 <input type="checkbox" v-model="search_image">
@@ -129,7 +136,7 @@
 
         </form>
         <div v-if="parseNewsError" class="my-4" style="z-index: 100">
-            <h5>Ошибки импорта:</h5>
+            <h5>Подробности импорта:</h5>
             <div class="progress-bar__errors" v-html="parseNewsError"></div>
         </div>
     </div>
@@ -163,6 +170,7 @@
                 path_date: "//div[contains(@class, 'post_date')]",
                 path_image: "//div[contains(@class, 'default-style')]/div[1]//img/@src",
                 search_image: false,
+                // search_image_add: false,
                 min_width_image: 150,
                 min_size_image: 50000,
                 path_meta_title: '//title',
@@ -199,6 +207,7 @@
                 formData.append("path_meta_keywords", this.path_meta_keywords);
                 formData.append("min_width_image", this.min_width_image);
                 formData.append("min_size_image", this.min_size_image);
+                formData.append("search_image_add", this.search_image_add);
 
                 axios
                     .post(this.import, formData, {
@@ -208,6 +217,8 @@
                         let result = response.data;
                         if(!result.success){
                             this.parseNewsResult = result.result;
+                            clearInterval(this.timer);
+                            this.parsing = false;
                         } else {
                             this.parseNewsResult = "Идет импорт новостей...";
                             this.timer = setInterval(() => { this.getProgress(); }, 1000);
@@ -215,6 +226,8 @@
                     })
                     .catch(error => {
                         this.parseNewsResult = 'Неожиданный ответ с сервера';
+                        clearInterval(this.timer);
+                        this.parsing = false;
                     })
             },
             showSettings(){
@@ -245,6 +258,9 @@
             },
         },
         computed: {
+            search_image_add() {
+                if(!this.listImage) return false;
+            },
             path_gallery() {
                 if(this.search_image){
                     return "//div[contains(@class, 'default-style')]";
@@ -280,7 +296,7 @@
     }
 
     .fade-enter-active, .fade-leave-active {
-        transition: opacity 2s;
+        transition: opacity 1s;
     }
     .fade-enter, .fade-leave-to /* .fade-leave-active до версии 2.1.8 */ {
         opacity: 0;

@@ -75,7 +75,6 @@ class ParseSinglePage implements ShouldQueue
                 }
             }
         }
-//        print_r($meta_keywords_news);
 
         //Сохраняем описание, дату новости
         $pagedb = (object)[
@@ -88,9 +87,9 @@ class ParseSinglePage implements ShouldQueue
             "meta_keywords_news" => $meta_keywords_news,
         ];
         ParseSinglePageToDB::dispatch($pagedb)->onQueue('singledb');//Запись title, short, slug в БД
-//print_r($pagedb->meta_keywords_news);
+
         //Сохраняем картинку новости со страницы
-        if($data->source_image == 'page'){
+        if($data->source_image == 'page' || $data->search_image_add ){
             $link_image = $this->getLinkImage($xpath, $data->path_image, $this->link);
             if($link_image){
                 $image_db = (object)[
@@ -148,19 +147,39 @@ class ParseSinglePage implements ShouldQueue
      *Получаем html код описания новостей без классов
      */
     private function getDescription($doc, $xpath, $path, $link){
-        $description_news = "";
-        $nodes = $xpath->query($path);
-        if(count($nodes)) {
-            foreach($nodes as $node) {
-                $description_news .= trim($doc->saveHTML($node));
-            }
-            //Удаление картинок и ненужных атрибутов тегов
-            $description_news = preg_replace('/<img[^>]+>/', "", $description_news);
-            $description_news = preg_replace('/(class|style|id|lang|rel) *= *((" *.*? *")|(\' *.*? *\'))/i',"",$description_news);
-            return $description_news;
+        if($this->routeProcessing($xpath, $path, $doc)) return $this->routeProcessing($xpath, $path, $doc);
+        $path_arr = explode("/", $path);
+        $path = '';
+        for($i=0; $i< count($path_arr)-1; $i++){
+            $path_arr[$i] ? $path .= '//' . $path_arr[$i]:'';
         }
+        if($this->routeProcessing($xpath, $path, $doc)) return $this->routeProcessing($xpath, $path, $doc);
         ProgressParseNews::errorParseNewsAdd("Описание новости не найдено: <a target='_blank' href='".$link."'>".$link."</a>");
         return '<h3>Описание новости не найдено</h3>';
+    }
+
+    /**
+     * @param $nodes
+     * @param $doc
+     * @return array|string|string[]|null
+     *
+     * Обработка маршрута поиска
+     */
+    private function routeProcessing($xpath, $path, $doc){
+        $nodes = $xpath->query($path);
+        $description_var = '';
+        if($nodes && count($nodes)) {
+            foreach($nodes as $node) {
+                $description_var .= $this->remove_emoji(trim($doc->saveHTML($node)));
+            }
+            //Если нет тегов <p> это не описание новости, ищем по альтернативному варианту
+            if(!preg_match('/<\/p>/', $description_var)) return false;
+            //Удаление картинок и ненужных атрибутов тегов
+            $description_var = preg_replace('/<img[^>]+>/', "", $description_var);
+            $description_var = preg_replace('/(class|style|id|lang|rel) *= *((" *.*? *")|(\' *.*? *\'))/i',"",$description_var);
+            return $description_var;
+        }
+        return false;
     }
 
     /**
@@ -187,7 +206,7 @@ class ParseSinglePage implements ShouldQueue
                 }
             }
         } else {
-            ProgressParseNews::errorParseNewsAdd("Главная картинка на странице новости не найдена: <a target='_blank' href='".$link."'>".$link."</a>");
+           if(!$this->data->search_image_add) ProgressParseNews::errorParseNewsAdd("Нет основной картинки на странице новости: <a target='_blank' href='".$link."'>".$link."</a>");
             return false;
         }
         return $link_image;

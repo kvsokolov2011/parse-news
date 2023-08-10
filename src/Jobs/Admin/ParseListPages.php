@@ -90,7 +90,7 @@ class ParseListPages implements ShouldQueue
 
                 $listdb = (object)[
                                     "slug" => $slug,
-                                    "short" => $short,
+                                    "short" => $this->remove_emoji($short),
                                     "meta_title_news" => $this->getMetaContent($eval_meta_title_news),
                                     "meta_description_news" => $this->getMetaContent($eval_meta_description_news),
                                     "meta_keywords_news" => $this->getMetaContent($eval_meta_keywords_news),

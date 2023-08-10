@@ -39,7 +39,7 @@ class ParseImageToDB implements ShouldQueue
         $j=1;
         while(News::query()->where("slug", $this->image_db->slug)->first() == null){
             sleep(1);
-            if($j > 300) {
+            if($j > 80) {
                 ProgressParseNews::errorParseNewsAdd('Картинку <b> ' . $this->image_db->slug . ' </b> не удалось сохранить. (проверьте скорость интернет соединения)');
                 exit;
             }

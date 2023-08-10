@@ -89,6 +89,7 @@ class ParseNewsController extends BaseController
      */
     public function create(Request $request)
     {
+
         $check = $this->validateInput($request);
         if($check){
             return [
@@ -163,6 +164,7 @@ class ParseNewsController extends BaseController
         $last_page_number = trim($request->last_page_number);
 
         //Проверка валидности адресов
+        $link_site = $this->punycode_encode($link_site);
         if(!$this->isValidURL($link_site)) return "Не валидный адрес сайта!";
         if(!$this->isValidURL($link_site.$uri_news)) return  "Не валидная ссылка на страницу новости!";
         if(!$this->isValidURL($link_site.$uri_news.$uri_paginator."1")) return  "Не валидный пагинатор!";
@@ -187,8 +189,31 @@ class ParseNewsController extends BaseController
             "path_meta_keywords" => trim($request->path_meta_keywords),
             "min_width_image" => trim($request->min_width_image),
             "min_size_image" => trim($request->min_size_image),
+            "search_image_add" => $request->search_image_add,
         ];
         return false;
+    }
+
+    /**
+     * @param $url
+     * @return string
+     *
+     * Преобразовываем в punycode
+     */
+    function punycode_encode($url) {
+        $parts = parse_url($url);
+        $out = '';
+        if (!empty($parts['scheme']))   $out .= $parts['scheme'] . ':';
+        if (!empty($parts['host']))     $out .= '//';
+        if (!empty($parts['user']))     $out .= $parts['user'];
+        if (!empty($parts['pass']))     $out .= ':' . $parts['pass'];
+        if (!empty($parts['user']))     $out .= '@';
+        if (!empty($parts['host']))     $out .= mb_substr($parts['host'], 0, 4) != 'xn--' ? idn_to_ascii($parts['host']) : $parts['host'];
+        if (!empty($parts['port']))     $out .= ':' . $parts['port'];
+        if (!empty($parts['path']))     $out .= $parts['path'];
+        if (!empty($parts['query']))    $out .= '?' . $parts['query'];
+        if (!empty($parts['fragment'])) $out .= '#' . $parts['fragment'];
+        return $out;
     }
 
     /**

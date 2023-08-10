@@ -16,9 +16,9 @@
 ## Queues
 Добавить в Supervisor:
  - **Последовательное выполнение очередей**
-  php artisan queue:work --queue=list,listdb,single,singledb,image_db,gallery_db --timeout=3000
- - **Отладка:**
-  php artisan queue:listen --queue=list,listdb,single,singledb,image_db,gallery_db --timeout=3000
+   php artisan queue:work --queue=list,listdb,single,singledb,image_db,gallery_db --timeout=85
+  - **Отладка:**
+    php artisan queue:listen --queue=list,listdb,single,singledb,image_db,gallery_db --timeout=85
 
 ### Components
 
