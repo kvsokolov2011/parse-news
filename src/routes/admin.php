@@ -1,5 +1,6 @@
 <?php
 
+use App\ProgressParseNews;
 use Illuminate\Support\Facades\Route;
 
 Route::group([
@@ -8,7 +9,6 @@ Route::group([
     'as' => 'admin.',
     'prefix' => 'admin',
 ], function () {
-
     Route::get('/parse-news', 'ParseNewsController@index')
             ->name('parse-news.index');
 
@@ -17,8 +17,4 @@ Route::group([
 
     Route::get('/parse-news/get-progress', 'ParseNewsController@getProgress')
         ->name('parse-news.get-progress');
-
-    Route::get('/parse-news/failed-jobs', 'ParseNewsController@failedJobs')
-        ->name('parse-news.failed-jobs');
-
 });

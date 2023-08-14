@@ -28,111 +28,95 @@
                 </div>
             </div>
 
-            <div class="form-group">
-                <label class="mr-3">Источник главного изображения: </label>
-                <select v-model="source_image" class="p-2 mt-3">
-                    <option value='page'>Страница Новости</option>
-                    <option value='list'>Список новостей</option>
-                </select>
-            </div>
-
-            <transition name="fade">
-                <div v-if="listImage" class="form-group">
-                    <label class="mr-3">Дополнительно искать основную картинку на странице новости: </label>
-                    <input type="checkbox" v-model="search_image_add">
-                </div>
-            </transition>
-
-            <div class="form-group">
-                <label class="mr-3">Искать картинки для галереи новостей по всему описанию новости: </label>
-                <input type="checkbox" v-model="search_image">
-            </div>
-
             <!--Прогресс бар-->
             <div class="my-4 progress">
                 <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100" v-bind:style="{'width': persentWidth  }"></div>
             </div>
 
-            <button class="btn btn-success"
-                    type="button"
-                    :disabled="parsing"
-                    v-on:click="parse()">Импорт</button>
+            <div v-if="create_import">
+                <button class="btn btn-success"
+                        type="button"
+                        :disabled="parsing"
+                        v-on:click="parse()">Импорт</button>
+            </div>
 
             <div class="my-4">
                 <h4 v-if="lastJobs">Количество оставшихся задач импорта: <span>{{ lastJobs }}</span></h4>
                 <h4 v-else>Результат импорта: <span style="color: green">{{ parseNewsResult }}</span></h4>
             </div>
 
-            <!--Настройки-->
-            <div v-on:click="showSettings()" class="progress-bar__btn"><u>{{ inscription }}</u></div>
+            <div v-if="update_settings">
+                <!--Настройки-->
+                <div v-on:click="showSettings()" class="progress-bar__btn"><u>{{ inscription }}</u></div>
 
-            <transition name="fade">
-                <div v-if="settings" class="pl-5">
-                    <h2 class="mt-5 mb-3 h4">Парсинг страницы со списком новостей 4geo</h2>
+                <transition name="fade">
+                    <div v-if="settings" class="pl-5">
+                        <h2 class="mt-5 mb-3 h4">Парсинг страницы со списком новостей 4geo</h2>
 
-                    <div class="form-group mr-md-3">
-                        <label>Путь к ссылке на страницу новости: </label>
-                        <input type="text" v-model="path_link" class="form-control" />
-                    </div>
-
-                    <div class="form-group mr-md-3">
-                        <label>Путь к Short новости: </label>
-                        <input type="text" v-model="path_short" class="form-control" />
-                    </div>
-
-                    <div v-if="listImage" class="form-group mr-md-3">
-                        <label>Путь к картинке новости: </label>
-                        <input type="text" v-model="path_image_list" class="form-control" />
-                    </div>
-
-                    <h2 class="mt-5 mb-3 h4">Парсинг страницы новости 4geo</h2>
-                    <div class="form-group mr-md-3">
-                        <label>Путь к title новости: </label>
-                        <input type="text" v-model="path_title" class="form-control" />
-                    </div>
-
-                    <div class="form-group mr-md-3">
-                        <label>Путь к полному описанию новости: </label>
-                        <input type="text" v-model="path_description" class="form-control" />
-                    </div>
-                    <div class="form-group mr-md-3">
-                        <label>Путь к дате создания новости: </label>
-                        <input type="text" v-model="path_date" class="form-control" />
-                    </div>
-                    <div v-if="pageImage" class="form-group mr-md-3">
-                        <label>Путь к картинке новости: </label>
-                        <input type="text" v-model="path_image" class="form-control" />
-                    </div>
-                    <div class="d-flex flex-column flex-md-row">
                         <div class="form-group mr-md-3">
-                            <label>Путь к картинкам галереи: </label>
-                            <input type="text" v-model="path_gallery" class="form-control" />
+                            <label>Путь к ссылке на страницу новости: </label>
+                            <input type="text" v-model="path_link" class="form-control" />
+                        </div>
+
+                        <div class="form-group mr-md-3">
+                            <label>Путь к Short новости: </label>
+                            <input type="text" v-model="path_short" class="form-control" />
+                        </div>
+
+                        <div class="form-group mr-md-3">
+                            <label>Путь к картинке новости: </label>
+                            <input type="text" v-model="path_image_list" class="form-control" />
+                        </div>
+
+                        <h2 class="mt-5 mb-3 h4">Парсинг страницы новости 4geo</h2>
+                        <div class="form-group mr-md-3">
+                            <label>Путь к title новости: </label>
+                            <input type="text" v-model="path_title" class="form-control" />
+                        </div>
+
+                        <div class="form-group mr-md-3">
+                            <label>Путь к полному описанию новости: </label>
+                            <input type="text" v-model="path_description" class="form-control" />
                         </div>
                         <div class="form-group mr-md-3">
-                            <label>Минимальная ширина картинки в галерее, px: </label>
-                            <input type="text" v-model="min_width_image" class="form-control" />
+                            <label>Путь к дате создания новости: </label>
+                            <input type="text" v-model="path_date" class="form-control" />
                         </div>
                         <div class="form-group mr-md-3">
-                            <label>Минимальный размер картинки в галерее, байт: </label>
-                            <input type="text" v-model="min_size_image" class="form-control" />
+                            <label>Путь к картинке новости: </label>
+                            <input type="text" v-model="path_image" class="form-control" />
+                        </div>
+                        <div class="d-flex flex-column flex-md-row">
+                            <div class="form-group mr-md-3">
+                                <label>Путь к картинкам галереи: </label>
+                                <input type="text" v-model="path_gallery" class="form-control" />
+                            </div>
+                            <div class="form-group mr-md-3">
+                                <label>Минимальная ширина картинки в галерее, px: </label>
+                                <input type="text" v-model="min_width_image" class="form-control" />
+                            </div>
+                            <div class="form-group mr-md-3">
+                                <label>Минимальный размер картинки в галерее, байт: </label>
+                                <input type="text" v-model="min_size_image" class="form-control" />
+                            </div>
+                        </div>
+
+                        <h2 class="mt-5 mb-3 h4">Парсинг meta 4geo</h2>
+                        <div class="form-group mr-md-3">
+                            <label>Мета title: </label>
+                            <input type="text" v-model="path_meta_title" class="form-control" />
+                        </div>
+                        <div class="form-group mr-md-3">
+                            <label>Мета description: </label>
+                            <input type="text" v-model="path_meta_description" class="form-control" />
+                        </div>
+                        <div class="form-group mr-md-3">
+                            <label>Мета keywords: </label>
+                            <input type="text" v-model="path_meta_keywords" class="form-control" />
                         </div>
                     </div>
-
-                    <h2 class="mt-5 mb-3 h4">Парсинг meta 4geo</h2>
-                    <div class="form-group mr-md-3">
-                        <label>Мета title: </label>
-                        <input type="text" v-model="path_meta_title" class="form-control" />
-                    </div>
-                    <div class="form-group mr-md-3">
-                        <label>Мета description: </label>
-                        <input type="text" v-model="path_meta_description" class="form-control" />
-                    </div>
-                    <div class="form-group mr-md-3">
-                        <label>Мета keywords: </label>
-                        <input type="text" v-model="path_meta_keywords" class="form-control" />
-                    </div>
-                </div>
-            </transition>
+                </transition>
+            </div>
 
         </form>
         <div v-if="parseNewsError" class="my-4" style="z-index: 100">
@@ -144,7 +128,7 @@
 </template>
 <script>
     export default {
-        props: ['url', 'import'],
+        props: ['url', 'import', 'update', 'create'],
         data: function() {
             return {
                 width: 0,
@@ -159,23 +143,23 @@
                 uri_paginator: '/page',
                 first_page_number: '1',
                 last_page_number: '1',
-                source_image: 'page',
                 settings: false,
                 inscription: 'Показать настройки >>>',
                 path_title: '//h1',
                 path_link: '//h4//strong//a/@href',
                 path_short: "//div[contains(@class, 'post-decription')]",
                 path_image_list:  "//a[contains(@class, 'news-img')]//img/@src",
-                path_description: "//div[contains(@class, 'default-style')]/div[1]",
+                path_description: "//div[contains(@class, 'default-style')]", ///div[1]",
                 path_date: "//div[contains(@class, 'post_date')]",
                 path_image: "//div[contains(@class, 'default-style')]/div[1]//img/@src",
-                search_image: false,
-                // search_image_add: false,
+                path_gallery: "//div[contains(@class, 'default-style')]",
                 min_width_image: 150,
-                min_size_image: 50000,
+                min_size_image: 30000,
                 path_meta_title: '//title',
                 path_meta_description: '//meta[@name="description"]/@content',
                 path_meta_keywords: '//meta[@name="keywords"]/@content',
+                update_settings: false,
+                create_import: false,
             }
         },
 
@@ -193,7 +177,7 @@
                 formData.append("uri_paginator", this.uri_paginator);
                 formData.append("first_page_number", this.first_page_number);
                 formData.append("last_page_number", this.last_page_number);
-                formData.append("source_image", this.source_image);
+                // formData.append("source_image", this.source_image);
                 formData.append("path_title", this.path_title);
                 formData.append("path_link", this.path_link);
                 formData.append("path_short", this.path_short);
@@ -207,7 +191,6 @@
                 formData.append("path_meta_keywords", this.path_meta_keywords);
                 formData.append("min_width_image", this.min_width_image);
                 formData.append("min_size_image", this.min_size_image);
-                formData.append("search_image_add", this.search_image_add);
 
                 axios
                     .post(this.import, formData, {
@@ -257,30 +240,10 @@
 
             },
         },
-        computed: {
-            search_image_add() {
-                if(!this.listImage) return false;
-            },
-            path_gallery() {
-                if(this.search_image){
-                    return "//div[contains(@class, 'default-style')]";
-                } else {
-                    return "//div[contains(@class, 'default-style')]/div[2]";
-                }
-            } ,
-            pageImage() {
-                if(this.source_image === 'page'){
-                    return true;
-                }
-            },
-            listImage() {
-                if(this.source_image === 'list'){
-                    return true;
-                }
-            }
-        },
         mounted() {
             this.clear();
+            this.update === "true" ? this.update_settings = true : this.update_settings = false;
+            this.create === "true" ? this.create_import = true : this.create_import = false;
         }
     }
 </script>

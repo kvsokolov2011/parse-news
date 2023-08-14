@@ -4,16 +4,31 @@
 @section('header-title', 'Импорт новостей')
 
 @section('admin')
-    @if(session()->get('status') != 'Идет процесс импорта новостей. Попробуйте позже.')
-        <div class="col-12">
-            <div class="card">
-                <div class="card-body">
-                    <progress-bar   url="{{ route('admin.parse-news.get-progress') }}"
-                                    import="{{ route('admin.parse-news.create') }}"></progress-bar>
+    @can("viewAny", \App\ProgressParseNews::class)
+        @if(session()->get('status') != 'Идет процесс импорта новостей. Попробуйте позже.')
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <progress-bar   url="{{ route('admin.parse-news.get-progress') }}"
+                                        import="{{ route('admin.parse-news.create') }}"
+                                        @can("update", \App\ProgressParseNews::class)
+                                            update=true
+                                        @endcan
+                                        @cannot("update", \App\ProgressParseNews::class)
+                                            update=false
+                                        @endcannot
+                                        @can("create", \App\ProgressParseNews::class)
+                                            create=true
+                                        @endcan
+                                        @cannot("create", \App\ProgressParseNews::class)
+                                            create=false
+                                        @endcannot>
+                        </progress-bar>
+                    </div>
                 </div>
             </div>
-        </div>
-    @endif
+        @endif
+    @endcan
 
 
 

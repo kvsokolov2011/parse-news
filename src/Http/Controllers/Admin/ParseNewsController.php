@@ -2,16 +2,22 @@
 
 namespace Cher4geo35\ParseNews\Http\Controllers\Admin;
 
+use App\Http\Controllers\Controller;
 use Cher4geo35\ParseNews\Jobs\Admin\ParseListPages;
 use Cher4geo35\ParseNews\Models\ProgressParseNews;
+use Cher4geo35\ParseNews\Policies\ParseNewsPolicy;
 use Cher4geo35\ParseNews\Traits\ParseImage;
 use Illuminate\Http\Request;
-use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Validator;
 
-class ParseNewsController extends BaseController
+class ParseNewsController extends Controller
 {
+    public function __construct()
+    {
+        parent::__construct();
+        $this->authorizeResource(ProgressParseNews::class, "parse-news");
+    }
+
     use ParseImage;
 
     const QUEUE = ['list', 'listdb', 'single', 'singledb', 'image_db', 'gallery_db'];
@@ -56,6 +62,7 @@ class ParseNewsController extends BaseController
      *
      */
     public function getProgress(){
+        $this->authorize('create', ProgressParseNews::class);
         $lastJobs = $this->queueIsNotEmpty();
         if(ProgressParseNews::summaryJobs() != 0){
             $progress = 100 * (ProgressParseNews::summaryJobs() - $lastJobs)/ProgressParseNews::summaryJobs();
@@ -89,7 +96,6 @@ class ParseNewsController extends BaseController
      */
     public function create(Request $request)
     {
-
         $check = $this->validateInput($request);
         if($check){
             return [
@@ -175,7 +181,6 @@ class ParseNewsController extends BaseController
             "uri_paginator" => $uri_paginator,
             "first_page_number" => $first_page_number,
             "last_page_number" => $last_page_number,
-            "source_image" => $request->source_image,
             "path_title" => trim($request->path_title),
             "path_link" => trim($request->path_link),
             "path_short" => trim($request->path_short),
@@ -189,7 +194,6 @@ class ParseNewsController extends BaseController
             "path_meta_keywords" => trim($request->path_meta_keywords),
             "min_width_image" => trim($request->min_width_image),
             "min_size_image" => trim($request->min_size_image),
-            "search_image_add" => $request->search_image_add,
         ];
         return false;
     }

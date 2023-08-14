@@ -57,10 +57,7 @@ class ParseListPages implements ShouldQueue
         $eval_meta_title_news = $xpath->evaluate($data->path_meta_title);
         $eval_meta_description_news = $xpath->evaluate($data->path_meta_description);
         $eval_meta_keywords_news = $xpath->evaluate($data->path_meta_keywords);
-
-        if($data->source_image == 'list'){
-            $eval_image_news = $xpath->evaluate($data->path_image_list);
-        }
+        $eval_image_news = $xpath->evaluate($data->path_image_list);
 
         $first_page_of_list = true;
         if($eval_link_page_news->length != 0){
@@ -74,7 +71,6 @@ class ParseListPages implements ShouldQueue
                 if($short == "Не найдено.") ProgressParseNews::errorParseNewsAdd("Short <a target='_blank' href='".$link."'>". $link ."</a> не найден");
 
                 //Сохраняем картинку новости из списка новостей
-                if($data->source_image == 'list'){
                     $link_image =  $eval_image_news[$key] ? $this->getAndClearLink($eval_image_news[$key]) : "Не найдено.";
                     if($link_image != "Не найдено."){
                         $image_db = (object)[
@@ -86,7 +82,6 @@ class ParseListPages implements ShouldQueue
                     } else {
                         ProgressParseNews::errorParseNewsAdd("Картинка в списке новостей не найдена: <a href='". $data->link_site . $data->uri_news . $data->uri_paginator."'>". $data->link_site . $data->uri_news . $data->uri_paginator."</a>");
                     }
-                }
 
                 $listdb = (object)[
                                     "slug" => $slug,

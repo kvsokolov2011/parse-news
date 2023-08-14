@@ -21,6 +21,7 @@ class ParseNewsMakeCommand extends BaseConfigModelCommand
                     {--all : Run all}
                     {--menu : Config menu}
                     {--models : Export models}
+                    {--policies : Export and create rules}
                     {--config : Make config}
                     {--controllers : Export controllers}
                     {--vue : Export vue files}
@@ -65,7 +66,7 @@ class ParseNewsMakeCommand extends BaseConfigModelCommand
         [
             "title" => "Парсинг новостей",
             "slug" => "parse-news",
-            "policy" => "ParseNewsPolicy",
+            "policy" => "ProgressParseNewsPolicy",
         ],
     ];
 
@@ -110,13 +111,9 @@ class ParseNewsMakeCommand extends BaseConfigModelCommand
             $this->makeConfig();
         }
 
-//        if ($this->option("scss") || $all) {
-//            $this->makeScssIncludes('app');
-//        }
-
-//        if ($this->option("policies") || $all) {
-//            $this->makeRules();
-//        }
+        if ($this->option("policies") || $all) {
+            $this->makeRules();
+        }
     }
 
     protected function makeMenu()

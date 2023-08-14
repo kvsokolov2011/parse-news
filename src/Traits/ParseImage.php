@@ -117,7 +117,7 @@ trait ParseImage
         }
         $ext = pathinfo($link, PATHINFO_EXTENSION);
         $image_name = pathinfo($link, PATHINFO_FILENAME).'.'.$ext;
-        if( file_put_contents($directory.'/'.$image_name, $contents) )  return $image_name;
+        if( file_put_contents($directory.'/'.explode('?', $image_name)[0], $contents) )  return $image_name;
         ProgressParseNews::errorParseNewsAdd('Файл '.$image_name.' не удалось сохранить');
         return false;
     }
@@ -134,16 +134,17 @@ trait ParseImage
         if($link != "Не найдено."){
             $directory = $this->createDirectory($dir_uri);
             $image_name = $this->putFile($link, $directory);
+            if( (Image::where('path', 'news/main/'.explode('?', $image_name)[0])->first()) != null ) {
+                //TODO желательно удалить сохраненный файл, но пока не мешает
+                return false;
+            }
             return Image::create([
-                'path' => $dir_uri.'/'.$image_name,
+                'path' => $dir_uri.'/'.explode('?', $image_name)[0],
                 'name' => $image_name,
             ]);
         } else {
             ProgressParseNews::errorParseNewsAdd('В результате парсинга картинка не найдена: '.$link);
-            return Image::create([
-                'path' => '',
-                'name' => 'Не найдено.',
-            ]);
+            return false;
         }
     }
 

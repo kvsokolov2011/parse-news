@@ -8,6 +8,7 @@
     php artisan make:parse-news {--all : Run all}
                           {--menu : Config menu}
                           {--models : Export models}
+                          {--policies : Export and create rules}
                           {--config : Make config}
                           {--controllers : Export controllers}
                           {--jobs : Export jobs}

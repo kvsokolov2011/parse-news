@@ -46,8 +46,10 @@ class ParseImageToDB implements ShouldQueue
             $j++;
         }
         $news = News::query()->where("slug", $this->image_db->slug)->first();
-        $image = $this->uploadImages($this->image_db->link_image, 'news/main');
-        $news->main_image = $image->id;
-        $news->save();
+        $img = $this->uploadImages($this->image_db->link_image, 'news/main');
+        if($img != false){
+            $news->main_image = $img->id;
+            $news->save();
+        }
     }
 }

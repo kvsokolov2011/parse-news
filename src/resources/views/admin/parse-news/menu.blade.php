@@ -1,4 +1,4 @@
-{{--@can("viewAny", \App\ParseNews::class)--}}
+@can("viewAny", \App\ProgressParseNews::class)
     <li class="nav-item">
         <a href="{{ route('admin.parse-news.index') }}"
            class="nav-link{{ strstr($currentRoute, 'admin.parse-news') !== FALSE ? ' active' : '' }}">
@@ -8,5 +8,5 @@
             <span>Парсинг новостей</span>
         </a>
     </li>
-{{--@endcan--}}
+@endcan
 

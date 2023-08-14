@@ -89,7 +89,6 @@ class ParseSinglePage implements ShouldQueue
         ParseSinglePageToDB::dispatch($pagedb)->onQueue('singledb');//Запись title, short, slug в БД
 
         //Сохраняем картинку новости со страницы
-        if($data->source_image == 'page' || $data->search_image_add ){
             $link_image = $this->getLinkImage($xpath, $data->path_image, $this->link);
             if($link_image){
                 $image_db = (object)[
@@ -99,7 +98,6 @@ class ParseSinglePage implements ShouldQueue
                 //Сохранение картинки в БД
                 ParseImageToDB::dispatch($image_db)->onQueue('image_db');
             }
-        }
 
         $this->galleryStorage($xpath, $data);
     }
@@ -120,7 +118,8 @@ class ParseSinglePage implements ShouldQueue
             foreach ($item as $gallery_news){
                 $lnk = trim($gallery_news->textContent.PHP_EOL);
                 $lnk_arr = explode(".", $lnk);
-                if(in_array(end($lnk_arr), $this->img_exts)){
+                $lnk_ext = explode('?', end($lnk_arr) )[0];
+                if(in_array($lnk_ext, $this->img_exts)){
                     if($this->getWidthImage($lnk) > $this->data->min_width_image && $this->getSizeImage($lnk) > $this->data->min_size_image){
                         $link_images_gallery[] = $lnk;
                     }
@@ -148,12 +147,6 @@ class ParseSinglePage implements ShouldQueue
      */
     private function getDescription($doc, $xpath, $path, $link){
         if($this->routeProcessing($xpath, $path, $doc)) return $this->routeProcessing($xpath, $path, $doc);
-        $path_arr = explode("/", $path);
-        $path = '';
-        for($i=0; $i< count($path_arr)-1; $i++){
-            $path_arr[$i] ? $path .= '//' . $path_arr[$i]:'';
-        }
-        if($this->routeProcessing($xpath, $path, $doc)) return $this->routeProcessing($xpath, $path, $doc);
         ProgressParseNews::errorParseNewsAdd("Описание новости не найдено: <a target='_blank' href='".$link."'>".$link."</a>");
         return '<h3>Описание новости не найдено</h3>';
     }
@@ -172,9 +165,9 @@ class ParseSinglePage implements ShouldQueue
             foreach($nodes as $node) {
                 $description_var .= $this->remove_emoji(trim($doc->saveHTML($node)));
             }
-            //Если нет тегов <p> это не описание новости, ищем по альтернативному варианту
-            if(!preg_match('/<\/p>/', $description_var)) return false;
-            //Удаление картинок и ненужных атрибутов тегов
+            //Очистка описания от ненужных тегов
+            $description_var = preg_replace('/<form.*<\/form>/', "", $description_var);
+            $description_var = preg_replace('/<span.*display:none.*<\/span>/', "", $description_var);
             $description_var = preg_replace('/<img[^>]+>/', "", $description_var);
             $description_var = preg_replace('/(class|style|id|lang|rel) *= *((" *.*? *")|(\' *.*? *\'))/i',"",$description_var);
             return $description_var;
@@ -206,7 +199,6 @@ class ParseSinglePage implements ShouldQueue
                 }
             }
         } else {
-           if(!$this->data->search_image_add) ProgressParseNews::errorParseNewsAdd("Нет основной картинки на странице новости: <a target='_blank' href='".$link."'>".$link."</a>");
             return false;
         }
         return $link_image;
