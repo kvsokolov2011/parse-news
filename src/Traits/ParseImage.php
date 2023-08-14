@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\DB;
 trait ParseImage
 {
     //Возможные расширения картинок
-    public $img_exts = array("gif", "jpg", "jpeg", "png", "tiff", "tif");
+    public $img_exts = array("gif", "jpg", "jpeg", "png", "tiff", "tif", "GIF", "JPG", "JPEG", "PNG", "TIFF", "tif");
     private $sumJobs = 0;
     /**
      * @param $image_news
@@ -58,10 +58,9 @@ trait ParseImage
      * Проверяем, что файл является изображением
      */
     public function checkImage($link){
-        $imgExts = array("gif", "jpg", "jpeg", "png", "tiff", "tif");
         $ext = pathinfo($link, PATHINFO_EXTENSION);
         $ext = explode('?', $ext)[0];
-        if (!in_array($ext, $imgExts)) {
+        if (!in_array($ext, $this->img_exts)) {
             ProgressParseNews::errorParseNewsAdd("Полученный файл не является изображением: ".$link);
         }
     }
