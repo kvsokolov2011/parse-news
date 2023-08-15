@@ -28,6 +28,11 @@
                 </div>
             </div>
 
+            <div class="form-group">
+                <label class="mr-3">Стереть все новости перед импортом: </label>
+                <input type="checkbox" v-model="clear_all_news">
+            </div>
+
             <!--Прогресс бар-->
             <div class="my-4 progress">
                 <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100" v-bind:style="{'width': persentWidth  }"></div>
@@ -160,6 +165,7 @@
                 path_meta_keywords: '//meta[@name="keywords"]/@content',
                 update_settings: false,
                 create_import: false,
+                clear_all_news: false,
             }
         },
 
@@ -191,6 +197,7 @@
                 formData.append("path_meta_keywords", this.path_meta_keywords);
                 formData.append("min_width_image", this.min_width_image);
                 formData.append("min_size_image", this.min_size_image);
+                formData.append("clear_all_news", this.clear_all_news);
 
                 axios
                     .post(this.import, formData, {

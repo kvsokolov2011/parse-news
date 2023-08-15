@@ -103,7 +103,7 @@ class ParseNewsController extends Controller
                 'result' => $check,
             ];
         }
-        $this->clearDBNewsAndFiles();
+        if($request->clear_all_news == 'true') $this->clearDBNewsAndFiles();
         ProgressParseNews::clearProgress();
         //Перебор страниц
         if($this->data->first_page_number <= $this->data->last_page_number){
