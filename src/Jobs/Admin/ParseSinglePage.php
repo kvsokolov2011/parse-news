@@ -89,8 +89,8 @@ class ParseSinglePage implements ShouldQueue
         ParseSinglePageToDB::dispatch($pagedb)->onQueue('singledb');//Запись title, short, slug в БД
 
         //Сохраняем картинку новости со страницы
-            $link_image = $this->getLinkImage($xpath, $data->path_image, $this->link);
-            if($link_image){
+            $link_image = $this->getLinkImage($xpath, $data->path_image, $doc);
+            if($link_image != ''){
                 $image_db = (object)[
                     "slug" => $this->slug,
                     "link_image" => $link_image,
@@ -99,28 +99,36 @@ class ParseSinglePage implements ShouldQueue
                 ParseImageToDB::dispatch($image_db)->onQueue('image_db');
             }
 
-        $this->galleryStorage($xpath, $data);
+        $this->galleryStorage($xpath, $data, $doc);
     }
 
     /**
      * @param $xpath
      * @param $data
-     * @return void
+     * @param $doc
+     * @return false|void
      *
      * Поиск и сохранение картинок галереи страницы новостей
      */
-    private function galleryStorage($xpath, $data){
-        $eval_gallery_news = [];
-        $eval_gallery_news[] = $xpath->evaluate($data->path_gallery.'//@src');
-        $eval_gallery_news[] = $xpath->evaluate($data->path_gallery.'//@href');
+    private function galleryStorage($xpath, $data, $doc){
+        $html_with_links = $this->getHtml($xpath, $data->path_gallery, $doc);
+        if(!$html_with_links) return false;
+
+        //Извлекаем href
+        $all_find_links = [];
+        preg_match_all('/<a.*?href=["\'](.*?)["\'].*?>/i', $html_with_links, $matches);
+        $all_find_links = array_merge($all_find_links, $matches[1]);
+        preg_match_all('/<img.*?src=["\'](.*?)["\'].*?>/i', $html_with_links, $matches);
+        $all_find_links = array_merge($all_find_links, $matches[1]);
+
         $link_images_gallery = [];
-        foreach ($eval_gallery_news as $item){
-            foreach ($item as $gallery_news){
-                $lnk = trim($gallery_news->textContent.PHP_EOL);
+        if($all_find_links != []) {
+            foreach ($all_find_links as $item) {
+                $lnk = trim($item);
                 $lnk_arr = explode(".", $lnk);
-                $lnk_ext = explode('?', end($lnk_arr) )[0];
-                if(in_array($lnk_ext, $this->img_exts)){
-                    if($this->getWidthImage($lnk) > $this->data->min_width_image && $this->getSizeImage($lnk) > $this->data->min_size_image){
+                $lnk_ext = explode('?', end($lnk_arr))[0];
+                if (in_array($lnk_ext, $this->img_exts)) {
+                    if ($this->getWidthImage($lnk) > $this->data->min_width_image && $this->getSizeImage($lnk) > $this->data->min_size_image) {
                         $link_images_gallery[] = $lnk;
                     }
                 }
@@ -175,6 +183,23 @@ class ParseSinglePage implements ShouldQueue
         return false;
     }
 
+    private function getHtml($xpath, $path, $doc){
+        $nodes = $xpath->query($path);
+        $result = '';
+        if($nodes && count($nodes)) {
+            foreach ($nodes as $node) {
+                $result .= $this->remove_emoji(trim($doc->saveHTML($node)));
+            }
+            //Очистка описания от ненужных тегов
+            $result = preg_replace('/<table.*<\/table>/', "", $result);
+            $result = preg_replace('/&amp;/', "&", $result);
+            $result = preg_replace('/<img.*width=.*height=.*>/', "", $result);
+            $result = preg_replace('/<img.*height=.*width=.*>/', "", $result);
+            return $result;
+        }
+        return false;
+    }
+
     /**
      * @param $xpath
      * @param $path
@@ -182,24 +207,27 @@ class ParseSinglePage implements ShouldQueue
      *
      * Поиск ссылки на основную картинку на странице
      */
-    private  function  getLinkImage($xpath, $path, $link){
-        $eval_image_news = $xpath->evaluate($path);
-        if( $eval_image_news->length > 0){
-            $first = true;
-            foreach ($eval_image_news as $image_news) {
-                $temp_link_image = $this->getAndClearLink($image_news);
-                $this->checkImage($temp_link_image);
-                if ($first) {
-                    $link_image = $temp_link_image;
-                    $first = false;
-                }
-                if($this->getSizeImage($temp_link_image) > $this->getSizeImage($link_image)
-                    && $this->getWidthImage($temp_link_image) > $this->getWidthImage($link_image)){
-                    $link_image = $temp_link_image;
-                }
+    private  function  getLinkImage($xpath, $path, $doc){
+        $html_with_src = $this->getHtml($xpath, $path, $doc);
+        if(!$html_with_src) return false;
+        //Извлекаем href
+        $all_find_links = [];
+        preg_match_all('/<img.*?src=["\'](.*?)["\'].*?>/i', $html_with_src, $matches);
+        $all_find_links = array_merge($all_find_links, $matches[1]);
+
+        $first = true;
+        $link_image = '';
+        foreach ($all_find_links as $link){
+            $temp_link = $this->clearLink($link);
+            if(!$this->checkImage($temp_link)) break;
+            if ($first) {
+                $link_image = $temp_link;
+                $first = false;
             }
-        } else {
-            return false;
+            if($this->getSizeImage($temp_link) > $this->getSizeImage($link_image)
+                && $this->getWidthImage($temp_link) > $this->getWidthImage($link_image)){
+                $link_image = $temp_link;
+            }
         }
         return $link_image;
     }

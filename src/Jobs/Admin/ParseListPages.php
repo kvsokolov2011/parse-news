@@ -79,8 +79,6 @@ class ParseListPages implements ShouldQueue
                         ];
 
                         ParseImageToDB::dispatch($image_db)->onQueue('image_db');
-                    } else {
-                        ProgressParseNews::errorParseNewsAdd("Картинка в списке новостей не найдена: <a href='". $data->link_site . $data->uri_news . $data->uri_paginator."'>". $data->link_site . $data->uri_news . $data->uri_paginator."</a>");
                     }
 
                 $listdb = (object)[

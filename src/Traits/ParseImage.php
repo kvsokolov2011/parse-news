@@ -18,6 +18,17 @@ trait ParseImage
     //Возможные расширения картинок
     public $img_exts = array("gif", "jpg", "jpeg", "png", "tiff", "tif", "GIF", "JPG", "JPEG", "PNG", "TIFF", "tif");
     private $sumJobs = 0;
+
+    /**
+     * @param $link
+     * @return string
+     */
+    public function clearLink($link){
+        $temp_link_image = trim($link);
+        $url = pathinfo($temp_link_image);
+        return $url['dirname'] . '/' . $url['basename'];
+    }
+
     /**
      * @param $image_news
      * @return string
@@ -53,16 +64,18 @@ trait ParseImage
 
     /**
      * @param $link
-     * @return void
+     * @return bool
      *
-     * Проверяем, что файл является изображением
+     * Файл является изображением?
      */
     public function checkImage($link){
         $ext = pathinfo($link, PATHINFO_EXTENSION);
         $ext = explode('?', $ext)[0];
         if (!in_array($ext, $this->img_exts)) {
-            ProgressParseNews::errorParseNewsAdd("Полученный файл не является изображением: ".$link);
+//            ProgressParseNews::errorParseNewsAdd("Полученный файл не является изображением: ".$link);
+            return false;
         }
+        return true;
     }
 
     /**
