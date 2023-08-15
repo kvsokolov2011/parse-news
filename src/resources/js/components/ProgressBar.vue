@@ -5,7 +5,7 @@
             <div class="d-flex flex-column flex-md-row">
                 <div class="form-group mr-md-3">
                     <label>Ссылка на сайт: </label>
-                    <input type="text" v-model="link_site" class="form-control" />
+                    <input type="text" v-model="link_site" class="form-control" placeholder="https://site.ru" />
                 </div>
                 <div class="form-group mr-md-3">
                     <label>Ссылка на страницу новости: </label>
@@ -143,7 +143,7 @@
                 parseNewsResult: '',
                 parseNewsError: '',
                 lastJobs: 0,
-                link_site: 'https://xn--80aabffge6atsmb6aa.xn--p1ai',
+                link_site: '',
                 uri_news: '/news',
                 uri_paginator: '/page',
                 first_page_number: '1',

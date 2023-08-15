@@ -171,6 +171,7 @@ class ParseNewsController extends Controller
 
         //Проверка валидности адресов
         $link_site = $this->punycode_encode($link_site);
+        if($link_site == '') return "Не заполнена ссылка на сайт";
         if(!$this->isValidURL($link_site)) return "Не валидный адрес сайта!";
         if(!$this->isValidURL($link_site.$uri_news)) return  "Не валидная ссылка на страницу новости!";
         if(!$this->isValidURL($link_site.$uri_news.$uri_paginator."1")) return  "Не валидный пагинатор!";
