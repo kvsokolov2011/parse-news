@@ -118,7 +118,7 @@ class ParseSinglePage implements ShouldQueue
         $all_find_links = [];
         preg_match_all('/<a.*?href=["\'](.*?)["\'].*?>/i', $html_with_links, $matches);
         $all_find_links = array_merge($all_find_links, $matches[1]);
-        preg_match_all('/<img.*?src=["\'](.*?)["\'].*?>/i', $html_with_links, $matches);
+        preg_match_all('/src="(.*?)"/i', $html_with_links, $matches);
         $all_find_links = array_merge($all_find_links, $matches[1]);
 
         $link_images_gallery = [];
@@ -174,11 +174,28 @@ class ParseSinglePage implements ShouldQueue
                 $description_var .= $this->remove_emoji(trim($doc->saveHTML($node)));
             }
             //Очистка описания от ненужных тегов
+            $description_var = preg_replace('/<a.*href="\/redirect.*?">.*?<\/a>/', "", $description_var);
             $description_var = preg_replace('/<form.*<\/form>/', "", $description_var);
-            $description_var = preg_replace('/<span.*display:none.*<\/span>/', "", $description_var);
+            $description_var = preg_replace('/\s?<span[^>]*?style="display:none;">.*?<\/span>\s?/si', "", $description_var);
             $description_var = preg_replace('/<img[^>]+>/', "", $description_var);
-            $description_var = preg_replace('/(class|style|id|lang|rel) *= *((" *.*? *")|(\' *.*? *\'))/i',"",$description_var);
-            return $description_var;
+            $description_var = trim(preg_replace('/(class|style|id|lang|rel) *= *((" *.*? *")|(\' *.*? *\'))/i',"",$description_var));
+            $tags = ['div', 'td', 'table', 'tbody', 'tr'];
+            foreach($tags as $tag){
+                $description_var = preg_replace('/<\/?'.trim($tag).'( .*?>|>)/', "", $description_var);
+            }
+            $en_tags = ['p', 'span', 'strong', 'ul', 'ol', 'h2', 'h3', 'h4' , 'h5'];
+            foreach($en_tags as $tag){
+                $description_var = preg_replace('/<'.trim($tag).'.*?>/', "<".trim($tag).">", $description_var);
+            }
+
+            try{
+                $description_var = trim(preg_replace('/(http)s?:\/\/.*?\/contacts/i', route('site.contact.page') ,$description_var));
+            } catch ( Exception $e) {
+                $description_var = trim(preg_replace('/(http)s?:\/\/.*?\/contacts/i', route('home') ,$description_var));
+            }
+            $str = str_replace('&nbsp;', ' ', htmlentities($description_var));
+            $description_var = html_entity_decode($str);
+            return trim($description_var);
         }
         return false;
     }
@@ -191,10 +208,12 @@ class ParseSinglePage implements ShouldQueue
                 $result .= $this->remove_emoji(trim($doc->saveHTML($node)));
             }
             //Очистка описания от ненужных тегов
-            $result = preg_replace('/<table.*<\/table>/', "", $result);
+            $result = preg_replace('/<table.*class="lp-grid-table".*<\/table>/', "", $result);
             $result = preg_replace('/&amp;/', "&", $result);
-            $result = preg_replace('/<img.*width=.*height=.*>/', "", $result);
-            $result = preg_replace('/<img.*height=.*width=.*>/', "", $result);
+            $result = preg_replace('/<img.*width=["\'][0-6][0-9]["\'].*height=["\'][0-6][0-9]["\'].*?>/', "", $result);
+            $result = preg_replace('/<img.*height=["\'][0-6][0-9]["\'].*width=["\'][0-6][0-9]["\'].*?>/', "", $result);
+            $result = preg_replace('/<img.*height=["\'][0-6][0-9]["\'].*?>/', "", $result);
+            $result = preg_replace('/<img.*width=["\'][0-6][0-9]["\'].*?>/', "", $result);
             return $result;
         }
         return false;
