@@ -144,7 +144,7 @@ trait ParseImage
         try{
             $contents = file_get_contents($link);
         } catch (Exception $e){
-            ProgressParseNews::errorParseNewsAdd('Файл по ссылке '.$link.' не удалось получить');
+//            ProgressParseNews::errorParseNewsAdd('Файл по ссылке '.$link.' не удалось получить');
             return false;
         }
         $ext = pathinfo($link, PATHINFO_EXTENSION);
@@ -166,8 +166,8 @@ trait ParseImage
         if($link != "Не найдено."){
             $directory = $this->createDirectory($dir_uri);
             $image_name = $this->putFile($link, $directory);
-            if( (Image::where('path', 'news/main/'.explode('?', $image_name)[0])->first()) != null ) {
-                //TODO желательно удалить сохраненный файл, но пока не мешает
+            if(!$image_name ||  (Image::where('path', 'news/main/'.explode('?', $image_name)[0])->first()) != null ) {
+                // TODO желательно удалить сохраненный файл, но пока не мешает
                 return false;
             }
             return Image::create([
