@@ -238,7 +238,7 @@ class ParseSinglePage implements ShouldQueue
         $link_image = '';
         foreach ($all_find_links as $link){
             $temp_link = $this->clearLink($link);
-            if(!$this->checkImage($temp_link)) break;
+            if($this->checkImage($temp_link) != 'false') continue;
             if ($first) {
                 $link_image = $temp_link;
                 $first = false;

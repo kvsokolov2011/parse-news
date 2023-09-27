@@ -243,8 +243,6 @@
                     if( response.data.result)  this.parseNewsResult = response.data.result;
                     this.parseNewsError = response.data.error;
                 });
-
-
             },
         },
         mounted() {

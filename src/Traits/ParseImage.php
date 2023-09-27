@@ -37,8 +37,11 @@ trait ParseImage
      */
     public function getAndClearLink($image_news){
         $temp_link_image = trim($image_news->textContent . PHP_EOL);
-        $url = pathinfo($temp_link_image);
-        return $url['dirname'] . '/' . $url['basename'];
+        if($temp_link_image != '' && $this->isValidURL($temp_link_image)){
+            $url = pathinfo($temp_link_image);
+            return $url['dirname'] . '/' . $url['basename'];
+        }
+        return 'Не найдено.';
     }
 
     /**
@@ -48,7 +51,11 @@ trait ParseImage
      * Получаем ширину картинки по ссылке
      */
     public function getWidthImage($link){
-        return getimagesize ($link)[0];
+        try{
+            return getimagesize ($link)[0];
+        } catch (Exception $e){
+            return 0;
+        }
     }
 
     /**
@@ -58,7 +65,11 @@ trait ParseImage
      * Получаем размер картинки по ссылке
      */
     public function getSizeImage($link){
-        if(isset(array_change_key_case(get_headers($link,1))['content-length'])) return array_change_key_case(get_headers($link,1))['content-length'];
+        try{
+            if(isset(array_change_key_case(get_headers($link,1))['content-length'])) return array_change_key_case(get_headers($link,1))['content-length'];
+        } catch (Exception $e) {
+            return 0;
+        }
         return 0;
     }
 
@@ -69,6 +80,7 @@ trait ParseImage
      * Файл является изображением?
      */
     public function checkImage($link){
+        if(!$this->getSizeImage($link) ) return false; // Проверка валидности ссылки
         $ext = pathinfo($link, PATHINFO_EXTENSION);
         $ext = explode('?', $ext)[0];
         if (!in_array($ext, $this->img_exts)) {
