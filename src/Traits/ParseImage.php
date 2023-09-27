@@ -44,6 +44,14 @@ trait ParseImage
         return 'Не найдено.';
     }
 
+    private function isValidURL($url) {
+        $file_headers = @get_headers($url);
+        if($file_headers){
+            if (strpos($file_headers[0], "200 OK") > 0) return true;
+        }
+        return false;
+    }
+
     /**
      * @param $link
      * @return mixed
