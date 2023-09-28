@@ -166,10 +166,7 @@ trait ParseImage
         if($link != "Не найдено."){
             $directory = $this->createDirectory($dir_uri);
             $image_name = $this->putFile($link, $directory);
-            if(!$image_name ||  (Image::where('path', 'news/main/'.explode('?', $image_name)[0])->first()) != null ) {
-                // TODO желательно удалить сохраненный файл, но пока не мешает
-                return false;
-            }
+            if(!$image_name) return false;
             return Image::create([
                 'path' => $dir_uri.'/'.explode('?', $image_name)[0],
                 'name' => $image_name,
