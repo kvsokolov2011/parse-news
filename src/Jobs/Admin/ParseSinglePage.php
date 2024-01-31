@@ -175,6 +175,7 @@ class ParseSinglePage implements ShouldQueue
             }
             //Очистка описания от ненужных тегов
             $description_var = preg_replace('/<a.*href="\/redirect.*?">.*?<\/a>/', "", $description_var);
+            $description_var = preg_replace('/<iframe.*<\/iframe>/', "", $description_var);
             $description_var = preg_replace('/<form.*<\/form>/', "", $description_var);
             $description_var = preg_replace('/\s?<span[^>]*?style="display:none;">.*?<\/span>\s?/si', "", $description_var);
             $description_var = preg_replace('/<img[^>]+>/', "", $description_var);
@@ -193,6 +194,8 @@ class ParseSinglePage implements ShouldQueue
             } catch ( Exception $e) {
                 $description_var = trim(preg_replace('/(http)s?:\/\/.*?\/contacts/i', route('home') ,$description_var));
             }
+
+            $description_var = preg_replace('/<a.*href="http.*:\/\/4geo.*?">(.*)?<\/a>/', "$1", $description_var);
             $str = str_replace('&nbsp;', ' ', htmlentities($description_var));
             $description_var = html_entity_decode($str);
             return trim($description_var);
