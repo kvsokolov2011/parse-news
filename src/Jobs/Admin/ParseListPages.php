@@ -67,7 +67,10 @@ class ParseListPages implements ShouldQueue
 
                 $slug = end($slug);
 
-                $short = $eval_short_news[$key] ? trim($eval_short_news[$key]->textContent.PHP_EOL) : "Не найдено.";
+                $shortTxt = $eval_short_news[$key] ? trim($eval_short_news[$key]->textContent.PHP_EOL) : "Не найдено.";
+                preg_match("/^(.*?[?!.])(?=\s*[A-ZА-ЯЁ]|$)/", $shortTxt, $shortArr);
+                $short = "Не найдено.";
+                if (isset($shortArr[0])) $short = $shortArr[0];
                 if($short == "Не найдено.") ProgressParseNews::errorParseNewsAdd("Short <a target='_blank' href='".$link."'>". $link ."</a> не найден");
 
                 //Сохраняем картинку новости из списка новостей
