@@ -189,11 +189,13 @@ class ParseSinglePage implements ShouldQueue
                 $description_var = preg_replace('/<'.trim($tag).'.*?>/', "<".trim($tag).">", $description_var);
             }
 
+            /*
             try{
-                $description_var = trim(preg_replace('/(http)s?:\/\/.*?\/contacts/i', route('site.contact.page') ,$description_var));
+                $description_var = trim(preg_replace('/(http)s?:\/\/.*?\/contacts/i', route('site.contact.page', [], false) ,$description_var));
             } catch ( Exception $e) {
-                $description_var = trim(preg_replace('/(http)s?:\/\/.*?\/contacts/i', route('home') ,$description_var));
+                $description_var = trim(preg_replace('/(http)s?:\/\/.*?\/contacts/i', route('home', [], false) ,$description_var));
             }
+            */
 
             $description_var = preg_replace('/<a.*href="http.*:\/\/4geo.*?">(.*)?<\/a>/', "$1", $description_var);
             $str = str_replace('&nbsp;', ' ', htmlentities($description_var));
