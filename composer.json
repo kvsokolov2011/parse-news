@@ -17,7 +17,7 @@
     },
     "require": {
         "php": "^8.0.2",
-        "portedcheese/base-settings": "^4.0",
+        "portedcheese/base-settings": "^4.0|^5.0",
         "guzzlehttp/guzzle": "^7.7"
     },
     "require-dev": {
